@@ -31,15 +31,6 @@ function renderHome(root) {
   });
 }
 
-function renderEvents(root) {
-  const screen = el('section', { class:'screen' });
-  screen.appendChild(el('div', { class:'section-head' },
-    el('h2', { class:'section-title' }, 'EVENTS'),
-    el('div', { class:'section-sub' }, 'COMING SOON // CARD BUILDER'),
-  ));
-  screen.appendChild(el('div', { class:'empty' }, 'EVENT SYSTEM IN DEVELOPMENT — USE MATCHMAKER FOR NOW'));
-  root.appendChild(screen);
-}
 
 // Wire up nav
 document.addEventListener('DOMContentLoaded', () => {

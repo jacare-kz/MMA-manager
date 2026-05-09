@@ -324,15 +324,14 @@ class FighterRenderer {
   _loadSprites() {
     const name  = this.fighter.name;
     const poses = ['idle', 'jab', 'kick', 'guard', 'takedown', 'ground_control', 'defeat', 'ko'];
-    let done = 0;
     for (const pose of poses) {
       const img = new Image();
-      img.onload = () => {
-        this.sprites[pose] = img;
-        this.hasSprites = true;
-        done++;
+      img.onload = () => { this.sprites[pose] = img; this.hasSprites = true; };
+      img.onerror = () => {
+        const def = new Image();
+        def.onload = () => { this.sprites[pose] = def; this.hasSprites = true; };
+        def.src = `Public/Fighters/sprites/default_${pose}.png`;
       };
-      img.onerror = () => { done++; };
       img.src = `Public/Fighters/sprites/${name}_${pose}.png`;
     }
   }

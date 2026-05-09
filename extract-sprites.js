@@ -170,15 +170,36 @@ async function extract(fighterName) {
   }
 }
 
+async function extractNoRemoveBg(fighterName) {
+  const src = path.join(__dirname, 'Public/Fighters', fighterName + '.png');
+  const outDir = path.join(__dirname, 'Public/Fighters/sprites');
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+  const sheet = await loadImage(src);
+  FRAME_W = Math.floor(sheet.width / COLS);
+  FRAME_H = Math.floor(sheet.height / ROWS);
+  console.log(`Loaded ${fighterName}: ${sheet.width}x${sheet.height}  →  frame ${FRAME_W}x${FRAME_H}`);
+  let frameIdx = 0;
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const pose = POSES[frameIdx++];
+      const canvas = createCanvas(FRAME_W, FRAME_H);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(sheet, col * FRAME_W, row * FRAME_H, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
+      // No removeBackground — already transparent
+      const cropped = autoCrop(ctx, FRAME_W, FRAME_H);
+      const outFile = path.join(outDir, `${fighterName}_${pose}.png`);
+      fs.writeFileSync(outFile, cropped.toBuffer('image/png'));
+      console.log(`  Saved: ${fighterName}_${pose}.png  (${cropped.width}x${cropped.height})`);
+    }
+  }
+}
+
 // Run
-const fighters = [
-  'Dricus DuPlessis',
-  'Sean Strickland',
-];
+const brownBgFighters = ['Yoel Romero', 'Jon Jones', 'Fedor Emelianenko', 'Georges St-Pierre'];
+const transparentBgFighters = ['Mirko Cro Cop'];
 
 (async () => {
-  for (const name of fighters) {
-    await extract(name);
-  }
+  for (const name of brownBgFighters) await extract(name);
+  for (const name of transparentBgFighters) await extractNoRemoveBg(name);
   console.log('\nAll done! Sprites in Public/Fighters/sprites/');
 })().catch(console.error);
