@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fighter Animation Test</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0d0d18; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:monospace; overflow:hidden; }
+canvas { display:block; }
+#controls { margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+button {
+  background:#111122; color:#ccc; border:1px solid #2a2a4a;
+  padding:7px 16px; font-family:monospace; font-size:11px;
+  letter-spacing:.12em; cursor:pointer; text-transform:uppercase;
+  transition: background .15s;
+}
+button:hover { background:#1e1e3e; border-color:#555; color:#fff; }
+#status { color:#444; font-size:10px; margin-top:8px; letter-spacing:.15em; min-height:16px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="controls">
+  <button onclick="doAction('red','jab')">🥊 JAB</button>
+  <button onclick="doAction('red','cross')">💥 CROSS</button>
+  <button onclick="doAction('red','kick')">🦵 KICK</button>
+  <button onclick="doAction('red','takedown')">🤼 TAKEDOWN</button>
+  <button onclick="doAction('blue','jab')">JAB 🥊</button>
+  <button onclick="doAction('blue','cross')">CROSS 💥</button>
+  <button onclick="autoFight()">⚡ AUTO FIGHT</button>
+</div>
+<div id="status" id="status">LOADING...</div>
+
+<script>
+const W = 860, H = 480;
+const cv = document.getElementById('c');
+cv.width = W; cv.height = H;
+const ctx = cv.getContext('2d');
+const status = document.getElementById('status');
+
+// ── Load sprite ───────────────────────────────────────────────────────────
+const sprite = new Image();
+sprite.src = 'Public/Fighters/sprites/dc_parts/dc_final_transparent.png';
+sprite.onload = () => { status.textContent = 'READY — CLICK A BUTTON'; startLoop(); };
+
+// ── Fighter state ─────────────────────────────────────────────────────────
+function makeFighter(x, groundY, flip) {
+  return {
+    x, groundY, flip,
+    // Visual transforms (animated)
+    tx: 0, ty: 0,           // translation offset
+    rot: 0,                 // body rotation (rad)
+    scaleX: 1, scaleY: 1,  // scale
+    lean: 0,                // horizontal lean (shear-like via extra tx)
+    alpha: 1,
+    // Animation queue
+    anim: 'idle',
+    t: 0, kf: 0,
+    // Effects
+    effects: [],
+    // For flash overlay
+    flashColor: null, flashT: 0,
+    // ko state
+    ko: false,
+  };
+}
+
+const RED  = makeFighter(W * 0.27, H * 0.84, false);
+const BLUE = makeFighter(W * 0.73, H * 0.84, true);
+
+// ── Animations ────────────────────────────────────────────────────────────
+// keyframe: { dur, tx, ty, rot(deg), sx, sy, lean }
+const ANIMS = {
+  idle: { loop:true, kfs:[
+    { dur:55, tx:0,   ty:0,  rot:0,   sx:1,    sy:1,    lean:0  },
+    { dur:55, tx:0,   ty:-5, rot:0.5, sx:0.99, sy:1.01, lean:0  },
+  ]},
+  jab: { loop:false, next:'idle', kfs:[
+    { dur:4,  tx:15,  ty:-3, rot:-4,  sx:1.04, sy:0.97, lean:8  },
+    { dur:5,  tx:30,  ty:-6, rot:-7,  sx:1.07, sy:0.94, lean:14 },
+    { dur:3,  tx:32,  ty:-6, rot:-7,  sx:1.07, sy:0.94, lean:14 },
+    { dur:14, tx:0,   ty:0,  rot:0,   sx:1,    sy:1,    lean:0  },
+  ]},
+  cross: { loop:false, next:'idle', kfs:[
+    { dur:4,  tx:10,  ty:-4, rot:-6,  sx:1.05, sy:0.95, lean:5  },
+    { dur:6,  tx:28,  ty:-8, rot:-10, sx:1.08, sy:0.93, lean:12 },
+    { dur:4,  tx:30,  ty:-8, rot:-10, sx:1.08, sy:0.93, lean:12 },
+    { dur:15, tx:0,   ty:0,  rot:0,   sx:1,    sy:1,    lean:0  },
+  ]},
+  kick: { loop:false, next:'idle', kfs:[
+    { dur:5,  tx:-8,  ty:-5, rot: 4,  sx:1.02, sy:0.98, lean:-6 },
+    { dur:6,  tx:20,  ty:-12,rot:-12, sx:1.06, sy:0.94, lean:16 },
+    { dur:5,  tx:22,  ty:-12,rot:-12, sx:1.06, sy:0.94, lean:16 },
+    { dur:15, tx:0,   ty:0,  rot:0,   sx:1,    sy:1,    lean:0  },
+  ]},
+  takedown: { loop:false, next:'idle', kfs:[
+    { dur:5,  tx:10,  ty:5,  rot:-8,  sx:1.05, sy:0.95, lean:5  },
+    { dur:7,  tx:40,  ty:20, rot:-20, sx:1.1,  sy:0.9,  lean:20 },
+    { dur:6,  tx:60,  ty:35, rot:-30, sx:1.12, sy:0.88, lean:28 },
+    { dur:20, tx:0,   ty:0,  rot:0,   sx:1,    sy:1,    lean:0  },
+  ]},
+  hit: { loop:false, next:'idle', kfs:[
+    { dur:4,  tx:-22, ty:2,  rot:8,   sx:0.96, sy:1.03, lean:-8 },
+    { dur:4,  tx:-10, ty:0,  rot:4,   sx:0.98, sy:1.01, lean:-3 },
+    { dur:4,  tx: 6,  ty:0,  rot:-2,  sx:1.01, sy:1,    lean:2  },
+    { dur:10, tx:0,   ty:0,  rot:0,   sx:1,    sy:1,    lean:0  },
+  ]},
+  ko: { loop:false, next:null, kfs:[
+    { dur:5,  tx:-15, ty:0,  rot:10,  sx:0.97, sy:1.02, lean:-8 },
+    { dur:6,  tx:-30, ty:5,  rot:25,  sx:0.94, sy:1.04, lean:-15},
+    { dur:7,  tx:-50, ty:20, rot:50,  sx:0.90, sy:1.06, lean:-25},
+    { dur:8,  tx:-70, ty:40, rot:75,  sx:0.87, sy:1.07, lean:-30},
+    { dur:999,tx:-80, ty:60, rot:92,  sx:0.85, sy:1.08, lean:-32},
+  ]},
+};
+
+// ── Easing ────────────────────────────────────────────────────────────────
+function easeOut(t)   { return 1 - (1-t)*(1-t); }
+function easeInOut(t) { return t<.5 ? 2*t*t : -1+(4-2*t)*t; }
+function lerp(a,b,t)  { return a+(b-a)*t; }
+
+// ── Update ────────────────────────────────────────────────────────────────
+function updateFighter(f) {
+  if (f.ko) return;
+  const anim = ANIMS[f.anim] || ANIMS.idle;
+  const kf   = anim.kfs[f.kf];
+  if (!kf) return;
+
+  f.t++;
+  const prog = easeInOut(Math.min(f.t / kf.dur, 1));
+
+  // Smooth lerp toward keyframe target
+  const speed = f.anim === 'idle' ? 0.04 : 0.22;
+  f.tx     = lerp(f.tx,     kf.tx   * (f.flip ? -1 : 1), speed + prog*0.15);
+  f.ty     = lerp(f.ty,     kf.ty,    speed + prog*0.15);
+  f.rot    = lerp(f.rot,    kf.rot * (f.flip ? -1 : 1) * Math.PI/180, speed + prog*0.1);
+  f.scaleX = lerp(f.scaleX, kf.sx,    speed);
+  f.scaleY = lerp(f.scaleY, kf.sy,    speed);
+  f.lean   = lerp(f.lean,   kf.lean * (f.flip ? -1 : 1), speed + prog*0.15);
+
+  if (f.t >= kf.dur) {
+    f.t = 0; f.kf++;
+    if (f.kf >= anim.kfs.length) {
+      if (anim.loop) { f.kf = 0; }
+      else { f.anim = anim.next; f.kf = 0; if (!anim.next) f.ko = true; }
+    }
+  }
+
+  // Flash decay
+  if (f.flashT > 0) f.flashT--;
+
+  // Update effects
+  f.effects = f.effects.filter(e => e.life > 0);
+  f.effects.forEach(e => { e.life--; e.y -= 1.5; e.scale += 0.05; e.alpha = e.life / e.maxLife; });
+}
+
+// ── Draw fighter ──────────────────────────────────────────────────────────
+const SW = 512, SH = 512;   // sprite natural size
+const DRAW_H = 300;         // rendered height
+const DRAW_W = SW * (DRAW_H / SH);
+
+function drawFighter(f) {
+  if (!sprite.complete) return;
+
+  ctx.save();
+  ctx.translate(f.x + f.tx, f.groundY + f.ty);
+
+  // Shear for lean effect
+  ctx.transform(1, 0, f.lean * 0.005, 1, 0, 0);
+
+  ctx.rotate(f.rot);
+  ctx.scale(f.scaleX * (f.flip ? -1 : 1), f.scaleY);
+
+  // Shadow under fighter
+  ctx.save();
+  ctx.scale(1, 0.15);
+  ctx.translate(-DRAW_W/2, 0);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(DRAW_W/2, 0, DRAW_W * 0.38 * f.scaleX, 18, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  // Hit flash overlay
+  if (f.flashT > 0) {
+    ctx.globalAlpha = (f.flashT / 8) * 0.5;
+    ctx.fillStyle = f.flashColor || '#ff4444';
+    ctx.fillRect(-DRAW_W/2 - 10, -DRAW_H - 10, DRAW_W + 20, DRAW_H + 10);
+    ctx.globalAlpha = 1;
+  }
+
+  // Draw sprite (pivot at bottom-center)
+  ctx.drawImage(sprite, -DRAW_W/2, -DRAW_H, DRAW_W, DRAW_H);
+
+  ctx.restore();
+
+  // Draw impact effects (in world space)
+  f.effects.forEach(e => {
+    ctx.save();
+    ctx.globalAlpha = e.alpha;
+    ctx.translate(e.x, e.y);
+    ctx.scale(e.scale, e.scale);
+    ctx.font = `${e.size}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(e.emoji, 0, 0);
+    ctx.restore();
+  });
+}
+
+// ── Spawn impact effect ───────────────────────────────────────────────────
+function spawnEffect(f, type) {
+  const emojis = { hit:['💥','✨'], kick:['💢','💥'], takedown:['⚡','💥'] };
+  const list = emojis[type] || emojis.hit;
+  const emoji = list[Math.floor(Math.random()*list.length)];
+  const side = f.flip ? -1 : 1;
+  f.effects.push({
+    x: f.x - side * (DRAW_W*0.3) + f.tx,
+    y: f.groundY - DRAW_H * 0.6,
+    life: 28, maxLife: 28, scale: 0.8, alpha: 1,
+    emoji, size: 36,
+  });
+}
+
+// ── Screen shake ──────────────────────────────────────────────────────────
+let shakeT = 0, shakeAmt = 0;
+function shake(amt) { shakeT = 12; shakeAmt = amt; }
+
+// ── Actions ───────────────────────────────────────────────────────────────
+let autoTimer = null;
+
+function doAction(corner, action) {
+  const f   = corner === 'red' ? RED  : BLUE;
+  const opp = corner === 'red' ? BLUE : RED;
+
+  if (f.ko) return;
+  f.anim = action; f.kf = 0; f.t = 0;
+
+  const delay = action === 'takedown' ? 350 : 200;
+  setTimeout(() => {
+    if (opp.ko && action !== 'takedown') return;
+    if (action === 'takedown') {
+      opp.anim = 'ko'; opp.kf = 0; opp.t = 0;
+      shake(8);
+      spawnEffect(opp, 'takedown');
+      status.textContent = corner.toUpperCase() + ' SHOOTS — TAKEDOWN!';
+    } else {
+      opp.anim = 'hit'; opp.kf = 0; opp.t = 0;
+      opp.flashColor = '#ff3300'; opp.flashT = 8;
+      shake(action === 'kick' ? 5 : 3);
+      spawnEffect(opp, action === 'kick' ? 'kick' : 'hit');
+      const labels = { jab:'JAB', cross:'CROSS', kick:'HEAD KICK' };
+      status.textContent = corner.toUpperCase() + ' LANDS ' + (labels[action]||action.toUpperCase()) + '!';
+    }
+  }, delay);
+}
+
+function autoFight() {
+  clearTimeout(autoTimer);
+  // Reset fighters
+  [RED, BLUE].forEach(f => {
+    f.ko = false; f.anim = 'idle'; f.kf = 0; f.t = 0;
+    f.tx=0; f.ty=0; f.rot=0; f.scaleX=1; f.scaleY=1; f.lean=0;
+    f.effects = [];
+  });
+
+  const seq = [
+    [0,    () => doAction('red',  'jab')],
+    [900,  () => doAction('blue', 'cross')],
+    [1700, () => doAction('red',  'cross')],
+    [2600, () => doAction('blue', 'kick')],
+    [3400, () => doAction('red',  'jab')],
+    [4200, () => doAction('red',  'cross')],
+    [5000, () => doAction('red',  'takedown')],
+  ];
+  seq.forEach(([delay, fn]) => { autoTimer = setTimeout(fn, delay); });
+  status.textContent = 'FIGHT!';
+}
+
+// ── Background ────────────────────────────────────────────────────────────
+function drawBG() {
+  // Dark octagon atmosphere
+  const grd = ctx.createRadialGradient(W/2, H*0.5, 80, W/2, H*0.6, W*0.7);
+  grd.addColorStop(0,   '#1c0f08');
+  grd.addColorStop(0.5, '#0e0e1a');
+  grd.addColorStop(1,   '#080810');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+
+  // Octagon floor
+  const floorY = H * 0.84;
+  const fgrd = ctx.createLinearGradient(0, floorY - 40, 0, H);
+  fgrd.addColorStop(0, '#1a0a00');
+  fgrd.addColorStop(1, '#0a0500');
+  ctx.fillStyle = fgrd;
+  ctx.fillRect(0, floorY, W, H);
+
+  // Floor line
+  ctx.fillStyle = '#cc1111';
+  ctx.fillRect(0, floorY, W, 2);
+
+  // Subtle cage lines in background
+  ctx.strokeStyle = 'rgba(80,80,80,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 12; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * (W/10), 0);
+    ctx.lineTo(i * (W/10), H);
+    ctx.stroke();
+  }
+
+  // Corner labels
+  ctx.font = 'bold 10px monospace';
+  ctx.letterSpacing = '0.2em';
+  ctx.fillStyle = '#cc2222';
+  ctx.textAlign = 'left';
+  ctx.fillText('RED CORNER', 20, floorY + 18);
+  ctx.fillStyle = '#2244cc';
+  ctx.textAlign = 'right';
+  ctx.fillText('BLUE CORNER', W - 20, floorY + 18);
+  ctx.textAlign = 'left';
+}
+
+// ── Main loop ─────────────────────────────────────────────────────────────
+function startLoop() {
+  RED.anim  = 'idle'; RED.kf  = 0;
+  BLUE.anim = 'idle'; BLUE.kf = 0;
+
+  function loop() {
+    // Screen shake
+    let sx = 0, sy = 0;
+    if (shakeT > 0) {
+      shakeT--;
+      sx = (Math.random()-0.5) * shakeAmt;
+      sy = (Math.random()-0.5) * shakeAmt * 0.5;
+    }
+
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    ctx.clearRect(-10, -10, W+20, H+20);
+    drawBG();
+
+    updateFighter(RED);
+    updateFighter(BLUE);
+    drawFighter(RED);
+    drawFighter(BLUE);
+
+    ctx.restore();
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+// Start immediately even if sprite not loaded (loop starts on load)
+if (sprite.complete) startLoop();
+</script>
+</body>
+</html>

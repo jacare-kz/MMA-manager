@@ -4,6 +4,7 @@
 
 const SCREENS = {
   home:       { render: renderHome },
+  career:     { render: renderCareer },
   roster:     { render: renderRoster },
   rankings:   { render: renderRankings },
   matchmaker: { render: renderMatchmaker },

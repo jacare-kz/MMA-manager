@@ -309,7 +309,9 @@ class FightScreen {
         el('div', { class:'timeline' }, tline),
         el('div', { class:'actions' },
           el('button', { class:'btn ghost', onclick: () => { overlay.remove(); } }, 'СМОТРЕТЬ ПОВТОР'),
-          el('button', { class:'btn', onclick: () => { overlay.remove(); navigateTo('matchmaker'); } }, 'НОВЫЙ БОЙ'),
+          this.opts.onFightEnd
+            ? el('button', { class:'btn gold', onclick: () => { overlay.remove(); this.opts.onFightEnd(result); } }, 'BACK TO CAREER')
+            : el('button', { class:'btn', onclick: () => { overlay.remove(); navigateTo('matchmaker'); } }, 'НОВЫЙ БОЙ'),
         ),
       ),
     );

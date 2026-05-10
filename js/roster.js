@@ -88,7 +88,7 @@ function fighterCardEl(f) {
     ),
     el('div', { class:'fighter-meta' },
       el('span', { class:'record' }, recordStr(f.record)),
-      el('span', {}, wc.label.split(' ').slice(-1)[0]),
+      el('span', {}, wc.id.toUpperCase()),
       el('span', {}, f.country),
       el('span', {}, 'OVR ' + ovr(f.stats)),
     ),
@@ -185,11 +185,11 @@ function renderRankings(root) {
     grid.appendChild(rankingBlock('POUND-FOR-POUND', '#1 OVERALL', p4p, true));
   }
 
-  // Per division
+  // Per division — champion + top 15 by rank/OVR
   WCLASSES.forEach(wc => {
-    const list = fightersInDivision(wc.id);
+    const list = FIGHTERS.filter(f => f.wclass === wc.id).sort(byDivisionRank).slice(0, 16);
     if (list.length === 0) return;
-    grid.appendChild(rankingBlock(wc.label, wc.lbs + ' LBS', list.slice(0, 16), false));
+    grid.appendChild(rankingBlock(wc.label, wc.lbs + ' LBS', list, false));
   });
 
   screen.appendChild(grid);
@@ -202,14 +202,16 @@ function rankingBlock(title, sub, list, isP4P) {
     el('h3', {}, title),
     el('div', { class:'lbs' }, sub),
   ));
+  let rankPos = 0;
   list.forEach((f, i) => {
     const isChamp = !isP4P && f.champion;
-    const pos = isChamp ? 'C' : (isP4P ? f.pfp : (f.ranking != null ? f.ranking : '—'));
+    if (!isChamp && !isP4P) rankPos++;
+    const pos = isChamp ? 'C' : (isP4P ? f.pfp : rankPos);
     const row = el('div', { class:'ranking-row' + (isChamp ? ' champ' : ''), onclick: () => openFighterModal(f) },
       el('span', { class:'pos' }, String(pos)),
       el('div', {},
         el('div', { class:'name' }, f.name + (f.nick ? '  "' + f.nick + '"' : '')),
-        el('div', { class:'rec' }, recordStr(f.record) + ' • ' + getWClass(f.wclass).label.split(' ').slice(-1)[0] + (isP4P ? '' : '')),
+        el('div', { class:'rec' }, recordStr(f.record) + ' • ' + f.style.toUpperCase()),
       ),
       el('span', { class:'ovr' }, 'OVR ' + ovr(f.stats)),
     );
@@ -271,7 +273,7 @@ function cornerBox(corner) {
     ));
     box.appendChild(el('div', { class:'fighter-meta' },
       el('span', { class:'record' }, recordStr(f.record)),
-      el('span', {}, getWClass(f.wclass).label.split(' ').slice(-1)[0]),
+      el('span', {}, f.wclass.toUpperCase()),
       el('span', {}, f.country),
       el('span', {}, 'OVR ' + ovr(f.stats)),
     ));
@@ -301,12 +303,12 @@ function openPicker(corner) {
   wcSelect.appendChild(allBtn);
   WCLASSES.forEach(wc => {
     if (!FIGHTERS.some(f => f.wclass === wc.id)) return;
-    const b = el('button', { class:'chip', onclick: () => { activeWc = wc.id; refreshChips(); renderList(); } }, wc.label.split(' ').slice(-1)[0]);
+    const b = el('button', { class:'chip', 'data-wc': wc.id, onclick: () => { activeWc = wc.id; refreshChips(); renderList(); } }, wc.label);
     wcSelect.appendChild(b);
   });
   function refreshChips() {
     Array.from(wcSelect.children).forEach((b, i) => b.classList.toggle('active',
-      (i === 0 && activeWc === null) || (i > 0 && b.textContent === getWClass(activeWc)?.label.split(' ').slice(-1)[0])));
+      (i === 0 && activeWc === null) || (i > 0 && b.dataset.wc === activeWc)));
   }
 
   const list = el('div', { class:'fighter-grid' });

@@ -220,12 +220,14 @@ function pickInitiator(red, blue, pos) {
 }
 
 // Pick action by initiator's intent + position
+// Power scaling (x^1.5) makes style differences sharp:
+//   striker td=0.15 → ~5% takedown chance, wrestler td=0.90 → ~70%
 function pickAction(initiator, defender, pos) {
   const t = initiator.tendencies;
   if (pos === POS.STAND) {
-    const wStrike = 0.25 + 1.5 * t.stand;
-    const wTd     = 0.10 + 1.6 * t.td;
-    const wClinch = 0.20 + 0.6 * (initiator.s.clinch / 100);
+    const wStrike = Math.pow(t.stand, 1.5) * 3.0;
+    const wTd     = Math.pow(t.td,    1.5) * 3.0;
+    const wClinch = 0.15 + 0.5 * (initiator.s.clinch / 100);
     return pickWeighted([
       { v:'STRIKE',      w: wStrike },
       { v:'TAKEDOWN',    w: wTd },
@@ -234,9 +236,9 @@ function pickAction(initiator, defender, pos) {
   }
   if (pos === POS.CLINCH) {
     return pickWeighted([
-      { v:'CLINCH_WORK', w: 1 + (initiator.s.clinch / 60) },
-      { v:'TAKEDOWN',    w: 0.8 + 1.0 * t.td },
-      { v:'STRIKE',      w: 0.4 },
+      { v:'CLINCH_WORK', w: 0.8 + (initiator.s.clinch / 60) },
+      { v:'TAKEDOWN',    w: 0.2 + 1.8 * Math.pow(t.td, 1.5) },
+      { v:'STRIKE',      w: 0.2 + 0.6 * t.stand },
       { v:'STAND_UP',    w: 0.2 + (defender.s.clinch / 200) },
     ]);
   }
@@ -249,7 +251,6 @@ function pickAction(initiator, defender, pos) {
       { v:'STAND_UP',    w: 0.2 },
     ]);
   } else {
-    // From bottom: scramble or sub from guard (rare unless grappler)
     return pickWeighted([
       { v:'GROUND_WORK', w: 0.6 + 0.5 * (initiator.s.grapple / 100) },
       { v:'STAND_UP',    w: 1 + (initiator.s.tdd / 100) },
@@ -416,18 +417,18 @@ const STRIKE_META = {
 };
 
 function pickStrikeType(att) {
-  // Style influences strike preference
-  const isStriker  = ['striker','kickboxer','boxer'].includes(att.style);
-  const isKicker   = att.style === 'kickboxer';
-  const isBoxer    = att.style === 'boxer';
+  // Use actual boxing/kicking stats so each fighter has a unique strike signature.
+  // High boxing → more punches; high kicking → more leg/body/head kicks.
+  const box  = att.s.boxing  / 100;
+  const kick = att.s.kicking / 100;
   return pickWeighted([
-    { v:'jab',       w: 1.6 + (isBoxer ? 0.6 : 0) },
-    { v:'cross',     w: 1.4 + (isBoxer ? 0.5 : 0) },
-    { v:'hook',      w: 1.2 + (isBoxer ? 0.4 : 0) + (isStriker ? 0.2 : 0) },
-    { v:'uppercut',  w: 0.7 + (isBoxer ? 0.3 : 0) },
-    { v:'leg',       w: 1.0 + (isKicker ? 1.0 : 0) },
-    { v:'body',      w: 0.7 + (isKicker ? 0.7 : 0) },
-    { v:'head_kick', w: 0.3 + (isKicker ? 0.7 : 0) },
+    { v:'jab',       w: 0.8 + box  * 1.8 },
+    { v:'cross',     w: 0.6 + box  * 1.6 },
+    { v:'hook',      w: 0.5 + box  * 1.4 },
+    { v:'uppercut',  w: 0.2 + box  * 1.0 },
+    { v:'leg',       w: 0.3 + kick * 2.0 },
+    { v:'body',      w: 0.2 + kick * 1.6 },
+    { v:'head_kick', w: 0.05 + kick * 1.4 },
   ]);
 }
 
@@ -523,12 +524,12 @@ function resolveGroundWork(att, def, pos, t, round, rs) {
     rs[att.corner].control += 12;
     att.stats.control_seconds += 12;
 
-    // Decide: GnP, advance, sub. Strikers/wrestlers prefer GnP, grapplers hunt subs.
-    const subBias = att.style === 'grappler' ? 0.9 : 0.25;
+    // sub_off stat drives sub hunting — no binary style check needed
+    const subBias = 0.1 + att.s.sub_off / 100 * 1.8;
     const action = pickWeighted([
       { v:'GNP',     w: 1.8 },
       { v:'ADVANCE', w: 0.8 + att.s.grapple / 200 },
-      { v:'SUB',     w: subBias + att.s.sub_off / 200 },
+      { v:'SUB',     w: subBias },
     ]);
 
     if (action === 'GNP') {
@@ -602,8 +603,8 @@ function resolveGroundWork(att, def, pos, t, round, rs) {
     rs[def.corner].control += 6;
     def.stats.control_seconds += 6;
 
-    // Guard sub
-    if (att.style === 'grappler' && chance(0.25 + att.s.sub_off/300)) {
+    // Guard sub — any fighter with good sub_off can hunt from bottom
+    if (att.s.sub_off >= 70 && chance(0.10 + att.s.sub_off/300)) {
       att.stats.sub_attempts += 1;
       const subProb = clamp(0.10 + (eff(att,'sub_off') - eff(def,'sub_def'))/140, 0.02, 0.45);
       if (chance(subProb)) {
@@ -645,23 +646,19 @@ function drainStamina(s, amount) {
 // ============== Scoring ==============
 function scoreRound(red, blue, rs) {
   const r = rs.red, b = rs.blue;
-  // Combine: damage(2x), sig strikes, td, control time, knockdowns(huge)
   const rScore = r.damage*2 + r.sig*1.5 + r.td*4 + r.control*0.05 + r.knockdowns*15;
   const bScore = b.damage*2 + b.sig*1.5 + b.td*4 + b.control*0.05 + b.knockdowns*15;
-  // Add small judge variance
   const noise = (Math.random() - 0.5) * 4;
   const diff = (rScore - bScore) + noise;
 
+  // Real MMA: 10-9 is standard, 10-8 only for clear dominance/knockdown, 10-7 essentially never
   let red10 = 10, blue10 = 10;
-  if (Math.abs(diff) < 1) {
-    // very close round, often 10-9 still — flip a coin slightly biased
-    if (diff > 0) blue10 = 9; else red10 = 9;
-  } else if (diff > 0) {
+  if (diff > 0) {
     blue10 = (diff > 18 || r.knockdowns >= 1) ? 8 : 9;
-    if (diff > 35) blue10 = 7;
-  } else {
+  } else if (diff < 0) {
     red10 = (-diff > 18 || b.knockdowns >= 1) ? 8 : 9;
-    if (-diff > 35) red10 = 7;
+  } else {
+    if (Math.random() < 0.5) blue10 = 9; else red10 = 9;
   }
 
   const who = red10 > blue10 ? 'red' : red10 < blue10 ? 'blue' : 'tie';
@@ -669,35 +666,46 @@ function scoreRound(red, blue, rs) {
 }
 
 function decideByCards(scores, red, blue, redIn, blueIn) {
-  // Three judges, slightly different evaluations
-  function judge() {
+  // Each judge scores each round independently.
+  // For clearly dominant rounds (10-8) all judges agree.
+  // For close 10-9 rounds a judge has ~15% chance to see it the other way (split judging).
+  function judgeCard() {
     let r = 0, b = 0;
-    for (const s of scores) { r += s.red; b += s.blue; }
-    // tiny per-judge swing
-    r += randi(-1, 1) * 0.5; b += randi(-1, 1) * 0.5;
+    for (const s of scores) {
+      const dominant = Math.abs(s.red - s.blue) >= 2;
+      if (dominant) {
+        // Dominant round — judges always agree
+        r += s.red; b += s.blue;
+      } else {
+        // Close 10-9 round — 15% chance this judge flips it
+        if (Math.random() < 0.15) {
+          r += s.blue; b += s.red;
+        } else {
+          r += s.red; b += s.blue;
+        }
+      }
+    }
     return { r, b };
   }
-  const j1 = judge(), j2 = judge(), j3 = judge();
-  let rWins = 0, bWins = 0, draws = 0;
+
+  const j1 = judgeCard(), j2 = judgeCard(), j3 = judgeCard();
+  let rWins = 0, bWins = 0;
   for (const j of [j1, j2, j3]) {
     if (j.r > j.b) rWins++;
     else if (j.b > j.r) bWins++;
-    else draws++;
   }
 
-  let winner;
-  let kind = 'DEC';
-  if (rWins >= 2) winner = 'red';
-  else if (bWins >= 2) winner = 'blue';
-  else { winner = null; kind = 'DRAW'; }
+  let winner = null;
+  let kind = 'DRAW';
+  if (rWins >= 2) { winner = 'red'; }
+  else if (bWins >= 2) { winner = 'blue'; }
 
-  // Detect unanimous vs split
   if (winner) {
     const unan = (winner === 'red' && rWins === 3) || (winner === 'blue' && bWins === 3);
     kind = unan ? 'UD' : 'SD';
   }
 
-  const cards = [j1, j2, j3].map(j => `${Math.round(j.r)}-${Math.round(j.b)}`).join(', ');
+  const cards = [j1, j2, j3].map(j => `${j.r}-${j.b}`).join(', ');
   return { type: kind, winner, by: 'DECISION', cards };
 }
 
