@@ -91,6 +91,18 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   transition: color 0.15s;
 }
 .nav-btn:hover { color: var(--ink); }
+.nav-btn-chess {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  color: #f0c040 !important;
+  border: 1px solid #f0c04066;
+  border-radius: 3px;
+  padding: 0 14px !important;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-btn-chess:hover { background: #f0c04022 !important; color: #fff !important; }
 .nav-btn.active { color: var(--ink); }
 .nav-btn.active::after {
   content: "";
