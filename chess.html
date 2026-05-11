@@ -701,6 +701,11 @@
     box-shadow: 0 0 22px rgba(76,175,80,0.6);
     cursor: default;
   }
+  .pm-ready-btn.taken {
+    border-color: #c0392b;
+    color: #c0392b;
+    cursor: default;
+  }
   .pm-ready-btn:disabled { cursor: default; }
 
   /* VS полоса по центру */
@@ -773,7 +778,7 @@
   <div class="pm-half top">
     <div class="pm-info-bar">
       <div class="pm-team-label" id="pm-name-w">INVINCIBLE</div>
-      <button class="pm-ready-btn" id="pm-ready-w" onclick="onReadyClick('w')">ГОТОВ</button>
+      <button class="pm-ready-btn" id="pm-ready-w" onclick="claimSide('w')">ВЫБРАТЬ</button>
     </div>
     <div class="pm-heroes-row" id="pm-heroes-w"></div>
   </div>
@@ -788,7 +793,7 @@
     <div class="pm-heroes-row" id="pm-heroes-b"></div>
     <div class="pm-info-bar">
       <div class="pm-team-label" id="pm-name-b">MARVEL</div>
-      <button class="pm-ready-btn" id="pm-ready-b" onclick="onReadyClick('b')">ГОТОВ</button>
+      <button class="pm-ready-btn" id="pm-ready-b" onclick="claimSide('b')">ВЫБРАТЬ</button>
     </div>
   </div>
 
@@ -2012,8 +2017,31 @@ function handleAudioEvent(evt) {
     btn.textContent = '■ Dota'; btn.style.borderColor = '#f0c040'; btn.style.color = '#f0c040';
   } else if (evt.type === 'music_stop') {
     stopAllMusic();
-  } else if (evt.type === 'player_ready') {
-    markReady(evt.color);
+  } else if (evt.type === 'color_pick') {
+    const pickedSide = evt.side;
+    const otherSide  = pickedSide === 'w' ? 'b' : 'w';
+
+    if (myPickedSide === pickedSide) {
+      // Гонка: оба кликнули одно и то же — я уступаю, беру другую сторону
+      myPickedSide = otherSide;
+      colorPicked[otherSide] = true;
+      markSideClaimed(otherSide, true);
+    }
+
+    colorPicked[pickedSide] = true;
+    markSideClaimed(pickedSide, myPickedSide === pickedSide ? true : false);
+
+    // Если я ещё не выбрал — меня автоматически ставят на оставшуюся сторону
+    if (!myPickedSide) {
+      myPickedSide = otherSide;
+      colorPicked[otherSide] = true;
+      markSideClaimed(otherSide, true);
+      // Заблокировать кнопку занятой стороны
+      const takenBtn = document.getElementById('pm-ready-' + pickedSide);
+      if (takenBtn) { takenBtn.disabled = true; takenBtn.style.opacity = '0.3'; }
+    }
+
+    checkBothSidesPicked();
   } else if (evt.type === 'start') {
     const a = document.getElementById('start-audio'); a.currentTime = 0; a.play();
   }
@@ -2135,18 +2163,21 @@ const PACK_LABELS = { invincible: 'INVINCIBLE', marvel: 'MARVEL', dota: 'DOTA 2'
 const PIECE_ORDER = ['K','Q','R','B','N','P'];
 const PIECE_NAMES = { K: 'KING', Q: 'QUEEN', R: 'ROOK', B: 'BISHOP', N: 'KNIGHT', P: 'PAWN' };
 let prematchOnStart = null;
-let readyPlayers = new Set();
+let colorPicked  = {};   // { w: true/false, b: true/false }
+let myPickedSide = null; // 'w' | 'b' | null
 
 function showPrematch(onStart) {
   prematchOnStart = onStart;
-  readyPlayers = new Set();
+  colorPicked  = { w: false, b: false };
+  myPickedSide = null;
 
   // Reset buttons
-  ['w','b'].forEach(color => {
-    const btn = document.getElementById('pm-ready-' + color);
-    btn.textContent = 'ГОТОВ';
-    btn.classList.remove('ready');
+  ['w','b'].forEach(side => {
+    const btn = document.getElementById('pm-ready-' + side);
+    btn.textContent = 'ВЫБРАТЬ';
+    btn.classList.remove('ready', 'taken');
     btn.disabled = false;
+    btn.style.opacity = '';
   });
 
   // Team names
@@ -2176,8 +2207,8 @@ function showPrematch(onStart) {
 
   // Hint
   document.getElementById('pm-hint').textContent = gameId
-    ? 'ОБА ИГРОКА ДОЛЖНЫ НАЖАТЬ ГОТОВ'
-    : 'НАЖМИТЕ ГОТОВ ЧТОБЫ НАЧАТЬ';
+    ? 'ВЫБЕРИТЕ КОМАНДУ'
+    : 'НАЖМИТЕ ВЫБРАТЬ ЧТОБЫ НАЧАТЬ';
 
   // Play OST
   stopAllMusic();
@@ -2194,6 +2225,7 @@ function showPrematch(onStart) {
 
 function dismissPrematch() {
   document.getElementById('prematch-screen').style.display = 'none';
+  stopAllMusic();
   if (prematchOnStart) {
     const fn = prematchOnStart;
     prematchOnStart = null;
@@ -2201,32 +2233,60 @@ function dismissPrematch() {
   }
 }
 
-function markReady(color) {
-  readyPlayers.add(color);
-  const btn = document.getElementById('pm-ready-' + color);
-  if (btn) {
-    btn.textContent = '✓ ГОТОВ';
+// Визуально пометить сторону как занятую
+function markSideClaimed(side, isMe) {
+  const btn = document.getElementById('pm-ready-' + side);
+  if (!btn) return;
+  if (isMe) {
+    btn.textContent = '✓ ВЫБРАНО';
     btn.classList.add('ready');
-    btn.disabled = true;
+  } else {
+    btn.textContent = '✗ ЗАНЯТО';
+    btn.classList.add('taken');
   }
-  // Both ready → start after short visual pause
-  if (readyPlayers.has('w') && readyPlayers.has('b')) {
+  btn.disabled = true;
+}
+
+// Проверить — обе стороны выбраны → старт
+function checkBothSidesPicked() {
+  if (colorPicked.w && colorPicked.b) {
+    // Применяем выбор цвета
+    if (myPickedSide) myColor = myPickedSide;
     document.getElementById('pm-hint').textContent = 'НАЧИНАЕМ...';
-    setTimeout(dismissPrematch, 700);
+    setTimeout(dismissPrematch, 800);
   }
 }
 
-function onReadyClick(color) {
-  // Local play: any click starts both sides
+// Игрок кликнул ВЫБРАТЬ на стороне side
+function claimSide(side) {
+  // Локальная игра: любой клик = старт
   if (!gameId) {
-    markReady('w');
-    markReady('b');
+    colorPicked.w = true; colorPicked.b = true;
+    markSideClaimed('w', true); markSideClaimed('b', true);
+    document.getElementById('pm-hint').textContent = 'НАЧИНАЕМ...';
+    setTimeout(dismissPrematch, 500);
     return;
   }
-  // Online: only your own side
-  if (myColor && myColor !== color) return;
-  markReady(color);
-  pushAudioEvent('player_ready', { color });
+
+  // Уже занято — игнорируем
+  if (colorPicked[side]) return;
+  // Уже сделали свой выбор — нельзя переключиться
+  if (myPickedSide !== null) return;
+
+  myPickedSide = side;
+  colorPicked[side] = true;
+  markSideClaimed(side, true);
+
+  // Заблокировать вторую кнопку (нельзя выбрать обе)
+  const otherSide = side === 'w' ? 'b' : 'w';
+  const otherBtn = document.getElementById('pm-ready-' + otherSide);
+  if (otherBtn && !colorPicked[otherSide]) {
+    otherBtn.disabled = true;
+    otherBtn.style.opacity = '0.3';
+  }
+
+  pushAudioEvent('color_pick', { side });
+  checkBothSidesPicked();
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
