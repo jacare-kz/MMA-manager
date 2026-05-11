@@ -491,71 +491,241 @@
   }
 
   /* ══════════════════════════════════════════════════
-     МОБИЛЬНАЯ АДАПТИВКА — портретный экран
-     Доска поворачивается на 90° и заполняет экран
+     МОБИЛЬНАЯ АДАПТИВКА
+     На десктопе game-ui-root прозрачен для лейаута.
+     На портретном мобильном — поворачивается целиком,
+     все дочерние fixed-элементы позиционируются внутри.
   ══════════════════════════════════════════════════ */
+
+  /* На десктопе — обёртка невидима для лейаута */
+  #game-ui-root { display: contents; }
+
   @media (orientation: portrait) and (max-width: 900px) {
 
-    /* Поворачиваем доску на 90° чтобы заполнить портретный экран */
-    #game-wrapper {
-      width:      min(calc(100vw * 1672 / 941), 100vh);
-      height:     min(100vw, calc(100vh * 941 / 1672));
-      max-width:  none;
-      max-height: none;
-      transform:  translate(-50%, -50%) rotate(90deg);
+    /* Весь UI вращается как единое целое */
+    #game-ui-root {
+      display: block;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      /* Размер = виртуальный ландшафтный экран */
+      width:  min(calc(100vw * 1672 / 941), 100vh);
+      height: min(100vw, calc(100vh * 941 / 1672));
+      transform: translate(-50%, -50%) rotate(90deg);
+      overflow: hidden;
     }
 
-    /* Убираем задержку двойного тапа на ячейках */
+    /* game-wrapper заполняет повёрнутый контейнер */
+    #game-wrapper {
+      position: absolute !important;
+      top: 0 !important; left: 0 !important;
+      width: 100% !important; height: 100% !important;
+      max-width: none !important; max-height: none !important;
+      transform: none !important;
+    }
+
+    /* Убираем задержку тапа */
     .cell { touch-action: manipulation; }
 
-    /* UI overlay — компактнее */
-    #ui-overlay { top: 10px; left: 10px; gap: 5px; }
-    #ui-overlay h1 { font-size: 13px; letter-spacing: 2px; }
-    #turn-indicator { font-size: 10px; padding: 4px 8px; }
-    #status { font-size: 10px; padding: 3px 8px; }
-
-    /* Кнопки управления — мельче и переносятся */
-    #controls { flex-wrap: wrap; max-width: 48vw; gap: 4px; top: 10px; right: 10px; }
-    #controls button { padding: 6px 8px; font-size: 9px; letter-spacing: 0; }
-
-    /* Часы */
-    #clocks { right: 10px; bottom: 10px; gap: 5px; }
-    .clock { min-width: 80px; padding: 5px 10px; }
-    .clock-time { font-size: 22px; }
-    .clock-label { font-size: 8px; }
-
-    /* Лобби — под ширину экрана */
-    #lobby-box {
-      width: 92vw;
-      max-width: 420px;
-      padding: 22px 14px;
-      gap: 12px;
-    }
-    .map-grid { grid-template-columns: repeat(3, 1fr); max-height: 220px; }
-    .map-card img { height: 70px; }
-    .pack-row-label { width: 44px; font-size: 9px; }
-    .pack-btn { font-size: 10px; padding: 8px 4px; }
-    .time-btn { font-size: 12px; padding: 10px 4px; }
-    #room-code-display { font-size: 28px; letter-spacing: 5px; }
+    /* Лобби компактнее (внутри повёрнутого контейнера) */
+    #lobby-box { width: 80%; max-width: 360px; padding: 20px 14px; gap: 10px; }
+    .map-card img { height: 65px; }
+    .pack-btn { font-size: 10px; padding: 8px 3px; }
+    .time-btn { font-size: 11px; padding: 9px 3px; }
+    #room-code-display { font-size: 26px; letter-spacing: 5px; }
 
     /* Калибровка */
-    #calibration { min-width: unset; width: 95vw; left: 50%; transform: translateX(-50%); bottom: 10px; }
-
-    /* Online индикатор */
-    #online-indicator { font-size: 10px; bottom: 10px; }
+    #calibration { min-width: unset; width: 90%; }
   }
 
-  /* Ландшафт на мобильном — тоже чуть компактнее */
+  /* Ландшафт на мобильном — чуть компактнее лобби */
   @media (orientation: landscape) and (max-height: 500px) {
-    #lobby-box { width: 90vw; max-width: 500px; padding: 16px 20px; gap: 10px; }
-    .map-grid { max-height: 150px; }
-    .map-card img { height: 55px; }
-    #ui-overlay h1 { font-size: 14px; }
-    #controls button { padding: 5px 10px; font-size: 10px; }
+    #lobby-box { width: 90vw; max-width: 500px; padding: 16px 20px; gap: 8px; }
+    .map-grid { max-height: 130px; }
+    .map-card img { height: 50px; }
+  }
+
+  /* ── PREMATCH SCREEN ─────────────────────────────────────────────── */
+  #prematch-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: 'Arial Black', Impact, sans-serif;
+  }
+
+  /* фоновый градиент — два луча от краёв */
+  #prematch-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 55% 80% at 15% 50%, rgba(255,200,50,0.13) 0%, transparent 70%),
+      radial-gradient(ellipse 55% 80% at 85% 50%, rgba(50,120,255,0.13) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .pm-arena {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 3%;
+    gap: 0;
+    flex: 1;
+  }
+
+  .pm-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 42%;
+  }
+
+  .pm-team-name {
+    font-size: clamp(18px, 3vw, 36px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 30px currentColor;
+  }
+  .pm-team.white .pm-team-name { color: #f0c040; }
+  .pm-team.black .pm-team-name { color: #6699ff; }
+
+  .pm-pieces {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .pm-piece-card {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .pm-piece-card:hover { transform: scale(1.05); box-shadow: 0 0 16px rgba(255,200,50,0.4); }
+
+  .pm-piece-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .pm-piece-label {
+    font-size: clamp(8px, 1vw, 12px);
+    color: #888;
+    text-align: center;
+    letter-spacing: 1px;
+    margin-top: 2px;
+    text-transform: uppercase;
+  }
+
+  .pm-vs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .pm-vs-text {
+    font-size: clamp(36px, 6vw, 80px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(255,255,255,0.6), 0 0 80px rgba(255,255,255,0.2);
+  }
+
+  .pm-divider {
+    width: 2px;
+    height: clamp(60px, 10vw, 120px);
+    background: linear-gradient(to bottom, transparent, #fff, transparent);
+    opacity: 0.3;
+  }
+
+  .pm-bottom {
+    padding: 20px 0 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pm-start-btn {
+    background: transparent;
+    border: 2px solid #f0c040;
+    color: #f0c040;
+    font-family: 'Arial Black', Impact, sans-serif;
+    font-size: clamp(14px, 2vw, 22px);
+    font-weight: 900;
+    letter-spacing: 5px;
+    padding: 14px 48px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    text-shadow: 0 0 12px #f0c040;
+    box-shadow: 0 0 20px rgba(240,192,64,0.2), inset 0 0 20px rgba(240,192,64,0.05);
+  }
+  .pm-start-btn:hover {
+    background: rgba(240,192,64,0.12);
+    box-shadow: 0 0 40px rgba(240,192,64,0.5), inset 0 0 20px rgba(240,192,64,0.1);
+    transform: scale(1.04);
+  }
+  .pm-start-btn:active { transform: scale(0.98); }
+
+  .pm-hint {
+    color: #555;
+    font-size: 12px;
+    letter-spacing: 2px;
+    font-family: Arial, sans-serif;
   }
 </style>
 </head>
 <body>
+
+<div id="game-ui-root">
+
+<!-- Предматчевый экран -->
+<div id="prematch-screen">
+  <div class="pm-arena">
+    <div class="pm-team white">
+      <div class="pm-team-name" id="pm-name-w">WHITE</div>
+      <div class="pm-pieces" id="pm-pieces-w"></div>
+    </div>
+
+    <div class="pm-vs">
+      <div class="pm-divider"></div>
+      <div class="pm-vs-text">VS</div>
+      <div class="pm-divider"></div>
+    </div>
+
+    <div class="pm-team black">
+      <div class="pm-team-name" id="pm-name-b">BLACK</div>
+      <div class="pm-pieces" id="pm-pieces-b"></div>
+    </div>
+  </div>
+
+  <div class="pm-bottom">
+    <button class="pm-start-btn" onclick="onStartMatchClick()">▶ НАЧАТЬ МАТЧ</button>
+    <div class="pm-hint" id="pm-hint">НАЖМИТЕ ДЛЯ НАЧАЛА</div>
+  </div>
+</div>
 
 <!-- Лобби -->
 <div id="lobby">
@@ -663,11 +833,11 @@
 
 <div id="controls">
   <a href="index.html" style="text-decoration:none"><button>← На сайт</button></a>
-  <button onclick="undoMove()">↩ Отмена</button>
   <button onclick="resetGame()">↺ Новая игра</button>
   <button id="ost-btn" onclick="toggleOST()">♫ OST</button>
   <button id="spiderman-btn" onclick="toggleSpiderman()">♫ Spider-Man</button>
-  <button onclick="toggleCalibration()">⚙ Настройка</button>
+  <button id="spongebob-btn" onclick="toggleSpongebob()">♫ SpongeBob</button>
+  <button id="dota-ost-btn" onclick="toggleDotaOST()">♫ Dota</button>
 </div>
 
 <div id="calibration" class="hidden">
@@ -727,12 +897,16 @@
   </div>
 </div>
 
+</div><!-- /game-ui-root -->
+
 <canvas id="sprite-canvas" style="display:none"></canvas>
 <audio id="omni-audio" src="Public/Checks/Voicy_Earth Isn't Yours To Conquer.mp3" preload="auto"></audio>
 <audio id="start-audio" src="Public/Checks/Voicy_Peeing Your Pants.mp3" preload="auto"></audio>
 <audio id="ost-audio" src="Public/Checks/13_Tom_Tom_Holy_Shit_Omni_Man_Invincible_Complete_OST_Sound.m4a" preload="auto" loop></audio>
 <audio id="thanos-audio" src="Public/Checks/Я_сама_неотвратимость_Танос_Марвел_для_ВП.m4a" preload="auto"></audio>
 <audio id="spiderman-audio" src="Public/Checks/Spider-Man-Main-Titles.m4a" preload="auto" loop></audio>
+<audio id="spongebob-audio" src="Public/Checks/SpongeBob-Closing-Theme-Song.m4a" preload="auto" loop></audio>
+<audio id="dota-ost-audio" src="Public/Checks/Dota-2-Main-Menu-Flute-Theme.m4a" preload="auto" loop></audio>
 <audio id="lina-audio" src="Public/Checks/Русская_озвучка_DOTA_2_Lina_Редкие_Фразы_Voiceli.m4a" preload="auto"></audio>
 <audio id="plankton-audio" src="Public/Checks/Планктон_АААА_#shorts_#youtubeshorts_#приколы_#мем_#fu.m4a" preload="auto"></audio>
 
@@ -1286,7 +1460,7 @@ function startGameAsHost() {
   lobby.setAttribute('style', 'display:none');
   document.getElementById('lobby-waiting').style.display = 'none';
   showOnlineIndicator('Противник подключился!');
-  initTimers();
+  showPrematch(() => { initTimers(); });
 }
 
 function generateId() {
@@ -1392,11 +1566,10 @@ async function joinOnlineGame() {
       w: PIECE_SETS_LIBRARY[s.packs.w],
       b: PIECE_SETS_LIBRARY[s.packs.b],
     };
-    const packLabels = { invincible: 'Invincible', marvel: 'Marvel', dota: 'Dota 2', spongebob: 'SpongeBob' };
     document.getElementById('clock-w').querySelector('.clock-label').textContent =
-      packLabels[s.packs.w] + ' · Белые';
+      (PACK_LABELS[s.packs.w] || s.packs.w) + ' · Белые';
     document.getElementById('clock-b').querySelector('.clock-label').textContent =
-      packLabels[s.packs.b] + ' · Чёрные';
+      (PACK_LABELS[s.packs.b] || s.packs.b) + ' · Чёрные';
     applyMap(s.map);
   }
 
@@ -1412,7 +1585,7 @@ async function joinOnlineGame() {
     document.getElementById('lobby').style.display = 'none';
     showOnlineIndicator('Вы играете за чёрных');
     subscribeToGame();
-    initTimers();
+    showPrematch(() => { initTimers(); });
   });
 }
 
@@ -1647,13 +1820,12 @@ function selectTime(seconds) {
     b: PIECE_SETS_LIBRARY[selectedPacks.b],
   };
 
-  const packLabels = { invincible: 'Invincible', marvel: 'Marvel', dota: 'Dota 2', spongebob: 'SpongeBob' };
   document.getElementById('turn-text').textContent =
-    'Ход белых (' + packLabels[selectedPacks.w] + ')';
+    'Ход белых (' + (PACK_LABELS[selectedPacks.w] || selectedPacks.w) + ')';
   document.getElementById('clock-w').querySelector('.clock-label').textContent =
-    packLabels[selectedPacks.w] + ' · Белые';
+    (PACK_LABELS[selectedPacks.w] || selectedPacks.w) + ' · Белые';
   document.getElementById('clock-b').querySelector('.clock-label').textContent =
-    packLabels[selectedPacks.b] + ' · Чёрные';
+    (PACK_LABELS[selectedPacks.b] || selectedPacks.b) + ' · Чёрные';
 
   const playStartSound = selectedPacks.w === 'invincible';
 
@@ -1676,12 +1848,11 @@ function selectTime(seconds) {
       document.getElementById('lobby').style.display = 'none';
       applyMap(currentMap);
       resetGame();
-      initTimers();
+      showPrematch(() => { initTimers(); });
       if (playStartSound) {
         const startAudio = document.getElementById('start-audio');
         startAudio.currentTime = 0;
         startAudio.play();
-        pushAudioEvent('start');
       }
     });
   }
@@ -1709,8 +1880,7 @@ function tickTimer() {
     timers[turn] = 0;
     updateClockDisplay();
     stopTimer();
-    const packLabels2 = { invincible: 'Invincible', marvel: 'Marvel', dota: 'Dota 2', spongebob: 'SpongeBob' };
-    const winner = turn === 'w' ? (packLabels2[selectedPacks.b] || 'Чёрные') : (packLabels2[selectedPacks.w] || 'Белые');
+    const winner = turn === 'w' ? (PACK_LABELS[selectedPacks.b] || 'Чёрные') : (PACK_LABELS[selectedPacks.w] || 'Белые');
     const statusEl = document.getElementById('status');
     statusEl.textContent = 'Время вышло! ' + winner + ' победил!';
     statusEl.className = 'checkmate';
@@ -1756,8 +1926,20 @@ function handleAudioEvent(evt) {
     const a = document.getElementById('spiderman-audio'); a.play();
     const btn = document.getElementById('spiderman-btn');
     btn.textContent = '■ Spider-Man'; btn.style.borderColor = '#f0c040'; btn.style.color = '#f0c040';
+  } else if (evt.type === 'spongebob_play') {
+    stopAllMusic();
+    const a = document.getElementById('spongebob-audio'); a.play();
+    const btn = document.getElementById('spongebob-btn');
+    btn.textContent = '■ SpongeBob'; btn.style.borderColor = '#f0c040'; btn.style.color = '#f0c040';
+  } else if (evt.type === 'dota_ost_play') {
+    stopAllMusic();
+    const a = document.getElementById('dota-ost-audio'); a.play();
+    const btn = document.getElementById('dota-ost-btn');
+    btn.textContent = '■ Dota'; btn.style.borderColor = '#f0c040'; btn.style.color = '#f0c040';
   } else if (evt.type === 'music_stop') {
     stopAllMusic();
+  } else if (evt.type === 'match_start') {
+    dismissPrematch();
   } else if (evt.type === 'start') {
     const a = document.getElementById('start-audio'); a.currentTime = 0; a.play();
   }
@@ -1792,17 +1974,22 @@ function playClipped(id, start, end) {
 }
 
 // ─── OST ─────────────────────────────────────────────────────────────────────
+const MUSIC_TRACKS = [
+  { audioId: 'ost-audio',       btnId: 'ost-btn',       label: '♫ OST'       },
+  { audioId: 'spiderman-audio', btnId: 'spiderman-btn', label: '♫ Spider-Man' },
+  { audioId: 'spongebob-audio', btnId: 'spongebob-btn', label: '♫ SpongeBob'  },
+  { audioId: 'dota-ost-audio',  btnId: 'dota-ost-btn',  label: '♫ Dota'       },
+];
+
 function stopAllMusic() {
-  ['ost-audio', 'spiderman-audio'].forEach(id => {
-    const a = document.getElementById(id);
+  MUSIC_TRACKS.forEach(({ audioId, btnId, label }) => {
+    const a = document.getElementById(audioId);
     a.pause(); a.currentTime = 0;
+    const btn = document.getElementById(btnId);
+    btn.textContent = label;
+    btn.style.borderColor = '';
+    btn.style.color = '';
   });
-  document.getElementById('ost-btn').textContent = '♫ OST';
-  document.getElementById('ost-btn').style.borderColor = '';
-  document.getElementById('ost-btn').style.color = '';
-  document.getElementById('spiderman-btn').textContent = '♫ Spider-Man';
-  document.getElementById('spiderman-btn').style.borderColor = '';
-  document.getElementById('spiderman-btn').style.color = '';
 }
 
 function toggleOST() {
@@ -1835,6 +2022,99 @@ function toggleSpiderman() {
     stopAllMusic();
     pushAudioEvent('music_stop');
   }
+}
+
+function toggleSpongebob() {
+  const audio = document.getElementById('spongebob-audio');
+  const btn   = document.getElementById('spongebob-btn');
+  if (audio.paused) {
+    stopAllMusic();
+    audio.play();
+    btn.textContent = '■ SpongeBob';
+    btn.style.borderColor = '#f0c040';
+    btn.style.color = '#f0c040';
+    pushAudioEvent('spongebob_play');
+  } else {
+    stopAllMusic();
+    pushAudioEvent('music_stop');
+  }
+}
+
+function toggleDotaOST() {
+  const audio = document.getElementById('dota-ost-audio');
+  const btn   = document.getElementById('dota-ost-btn');
+  if (audio.paused) {
+    stopAllMusic();
+    audio.play();
+    btn.textContent = '■ Dota';
+    btn.style.borderColor = '#f0c040';
+    btn.style.color = '#f0c040';
+    pushAudioEvent('dota_ost_play');
+  } else {
+    stopAllMusic();
+    pushAudioEvent('music_stop');
+  }
+}
+
+// ─── PREMATCH SCREEN ──────────────────────────────────────────────────────────
+const PACK_LABELS = { invincible: 'INVINCIBLE', marvel: 'MARVEL', dota: 'DOTA 2', spongebob: 'SPONGEBOB' };
+const PIECE_ORDER = ['K','Q','R','B','N','P'];
+let prematchOnStart = null;
+
+function showPrematch(onStart) {
+  prematchOnStart = onStart;
+
+  // Team names
+  document.getElementById('pm-name-w').textContent = PACK_LABELS[selectedPacks.w] || 'БЕЛЫЕ';
+  document.getElementById('pm-name-b').textContent = PACK_LABELS[selectedPacks.b] || 'ЧЁРНЫЕ';
+
+  // Piece images
+  ['w', 'b'].forEach(color => {
+    const container = document.getElementById('pm-pieces-' + color);
+    container.innerHTML = '';
+    PIECE_ORDER.forEach(t => {
+      const src = pieceImages[color + t];
+      const card = document.createElement('div');
+      card.className = 'pm-piece-card';
+      if (src) {
+        const img = document.createElement('img');
+        img.src = src;
+        card.appendChild(img);
+      }
+      container.appendChild(card);
+    });
+  });
+
+  // Online hint
+  document.getElementById('pm-hint').textContent = gameId
+    ? 'ЛЮБОЙ ИГРОК МОЖЕТ НАЧАТЬ'
+    : 'НАЖМИТЕ ДЛЯ НАЧАЛА';
+
+  // Play OST
+  stopAllMusic();
+  const ost = document.getElementById('ost-audio');
+  ost.currentTime = 0;
+  ost.play();
+  const ostBtn = document.getElementById('ost-btn');
+  ostBtn.textContent = '■ OST';
+  ostBtn.style.borderColor = '#f0c040';
+  ostBtn.style.color = '#f0c040';
+
+  document.getElementById('prematch-screen').style.display = 'flex';
+}
+
+function dismissPrematch() {
+  document.getElementById('prematch-screen').style.display = 'none';
+  if (prematchOnStart) {
+    const fn = prematchOnStart;
+    prematchOnStart = null;
+    fn();
+  }
+}
+
+function onStartMatchClick() {
+  if (gameId) pushAudioEvent('match_start');
+  dismissPrematch();
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
