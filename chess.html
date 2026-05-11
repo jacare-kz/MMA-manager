@@ -540,6 +540,27 @@
       letter-spacing: 0.5px;
     }
 
+    /* Таймер — левое поле, компактнее */
+    #clocks {
+      right: auto;
+      left: 8px;
+      bottom: auto;
+      top: 50%;
+      transform: translateY(-50%);
+      gap: 6px;
+    }
+    .clock {
+      min-width: 0;
+      padding: 5px 8px;
+    }
+    .clock-label {
+      font-size: 7px;
+      letter-spacing: 1px;
+    }
+    .clock-time {
+      font-size: 20px;
+    }
+
     /* Лобби компактнее (внутри повёрнутого контейнера) */
     #lobby-box { width: 80%; max-width: 360px; padding: 20px 14px; gap: 10px; }
     .map-card img { height: 65px; }
