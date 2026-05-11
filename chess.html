@@ -220,8 +220,8 @@
     background: #111;
     border: 1px solid #444;
     border-radius: 12px;
-    padding: 36px 40px;
-    width: 360px;
+    padding: 36px 32px;
+    width: 460px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -333,15 +333,16 @@
     background: #1a1a1a;
     border: 2px solid #333;
     color: #aaa;
-    padding: 10px 6px;
-    font-size: 11px;
+    padding: 10px 4px;
+    font-size: 10px;
     font-weight: bold;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     cursor: pointer;
     border-radius: 4px;
     transition: border-color 0.15s, background 0.15s, color 0.15s;
     text-transform: uppercase;
     text-align: center;
+    white-space: nowrap;
   }
   .pack-btn:hover { border-color: #f0c040; background: #222; color: #fff; }
   .pack-btn.selected { border-color: #f0c040; color: #f0c040; background: #221e00; }
@@ -353,7 +354,7 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
     margin-top: 8px;
-    max-height: 260px;
+    max-height: 340px;
     overflow-y: auto;
   }
   .map-card {
@@ -561,8 +562,28 @@
       font-size: 20px;
     }
 
+    /* UI оверлей — скрыть заголовок, индикатор хода сверху по центру */
+    #ui-overlay h1 { display: none; }
+    #ui-overlay {
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      align-items: center;
+    }
+    #turn-indicator {
+      font-size: 10px;
+      padding: 4px 10px;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+    #status {
+      font-size: 10px;
+      padding: 3px 10px;
+    }
+
     /* Лобби компактнее (внутри повёрнутого контейнера) */
-    #lobby-box { width: 80%; max-width: 360px; padding: 20px 14px; gap: 10px; }
+    #lobby-box { width: 88%; max-width: 460px; padding: 20px 14px; gap: 10px; }
+    .map-grid { max-height: 300px; }
     .map-card img { height: 65px; }
     .pack-btn { font-size: 10px; padding: 8px 3px; }
     .time-btn { font-size: 11px; padding: 9px 3px; }
@@ -876,6 +897,14 @@
           <img src="Public/Checks/Dota2-map.webp" alt="Dota 2">
           <div class="map-card-name">Dota 2</div>
         </div>
+        <div class="map-card" onclick="selectMap('AdventureTime')" id="map-AdventureTime">
+          <img src="Public/Checks/Adventure time.webp" alt="Adventure Time">
+          <div class="map-card-name">Adventure Time</div>
+        </div>
+        <div class="map-card" onclick="selectMap('WW2')" id="map-WW2">
+          <img src="Public/Checks/WW2.webp" alt="WW2">
+          <div class="map-card-name">WW2</div>
+        </div>
       </div>
       <button class="lobby-btn" style="margin-top:14px" onclick="goToPieceSelect()">Далее →</button>
       <button class="lobby-btn secondary" style="margin-top:6px;border-color:#555;color:#555" onclick="backToLobbyMain()">← Назад</button>
@@ -887,12 +916,14 @@
         <button class="pack-btn selected" id="pack-w-invincible" onclick="selectPack('w','invincible')">Invincible</button>
         <button class="pack-btn" id="pack-w-dota" onclick="selectPack('w','dota')">Dota 2</button>
         <button class="pack-btn" id="pack-w-spongebob" onclick="selectPack('w','spongebob')">SpongeBob</button>
+        <button class="pack-btn" id="pack-w-adventuretime" onclick="selectPack('w','adventuretime')">Adv. Time</button>
       </div>
       <div class="pack-row">
         <span class="pack-row-label">Чёрные</span>
         <button class="pack-btn selected" id="pack-b-marvel" onclick="selectPack('b','marvel')">Marvel</button>
         <button class="pack-btn" id="pack-b-dota" onclick="selectPack('b','dota')">Dota 2</button>
         <button class="pack-btn" id="pack-b-spongebob" onclick="selectPack('b','spongebob')">SpongeBob</button>
+        <button class="pack-btn" id="pack-b-adventuretime" onclick="selectPack('b','adventuretime')">Adv. Time</button>
       </div>
       <button class="lobby-btn" style="margin-top:14px" onclick="goToTimeSelect()">Далее →</button>
       <button class="lobby-btn secondary" style="margin-top:6px;border-color:#555;color:#555" onclick="goToMapSelect()">← Назад</button>
@@ -947,6 +978,7 @@
   <button id="spiderman-btn" onclick="toggleSpiderman()">♫ Spider-Man</button>
   <button id="spongebob-btn" onclick="toggleSpongebob()">♫ SpongeBob</button>
   <button id="dota-ost-btn" onclick="toggleDotaOST()">♫ Dota</button>
+  <button id="island-song-btn" onclick="toggleIslandSong()">♫ Island Song</button>
 </div>
 
 <div id="calibration" class="hidden">
@@ -1017,7 +1049,8 @@
 <audio id="ost-audio"      src="Public/Checks/13_Tom_Tom_Holy_Shit_Omni_Man_Invincible_Complete_OST_Sound.m4a" preload="metadata" loop></audio>
 <audio id="spiderman-audio" src="Public/Checks/Spider-Man-Main-Titles.m4a" preload="metadata" loop></audio>
 <audio id="spongebob-audio" src="Public/Checks/SpongeBob-Closing-Theme-Song.m4a" preload="metadata" loop></audio>
-<audio id="dota-ost-audio"  src="Public/Checks/Dota-2-Main-Menu-Flute-Theme.m4a" preload="metadata" loop></audio>
+<audio id="dota-ost-audio"      src="Public/Checks/Dota-2-Main-Menu-Flute-Theme.m4a"                           preload="metadata" loop></audio>
+<audio id="island-song-audio" src="Public/Checks/Island-Song-Come-Along-with-Me-feat-Ashley-Eriksson.m4a" preload="metadata" loop></audio>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -1066,6 +1099,17 @@ const PIECE_SETS_LIBRARY = {
       B: 'Public/Checks/Spongebob4.webp',
       N: 'Public/Checks/Spongebob 5.webp',
       P: 'Public/Checks/Spongebob 6.webp',
+    }
+  },
+  adventuretime: {
+    type: 'files',
+    pieces: {
+      K: 'Public/Checks/Adventure time 4.webp',
+      Q: 'Public/Checks/Adventure time 3.webp',
+      R: 'Public/Checks/Adventure time 6.webp',
+      B: 'Public/Checks/Adventure time 5.webp',
+      N: 'Public/Checks/Adventure time 7.webp',
+      P: 'Public/Checks/Adventure time 1.webp',
     }
   },
 };
@@ -1439,7 +1483,7 @@ function updateStatus() {
   const inCheck = isInCheck(board, turn);
   const hasMoves = hasAnyLegalMoves(turn);
 
-  const packLabels = { invincible: 'Invincible', marvel: 'Marvel', dota: 'Dota 2', spongebob: 'SpongeBob' };
+  const packLabels = { invincible: 'Invincible', marvel: 'Marvel', dota: 'Dota 2', spongebob: 'SpongeBob', adventuretime: 'Adv. Time' };
   const wLabel = packLabels[selectedPacks.w] || 'Белые';
   const bLabel = packLabels[selectedPacks.b] || 'Чёрные';
 
@@ -1878,6 +1922,22 @@ const MAP_CONFIG = {
     height: '88.629%',
     rows:   '119fr 98fr 100fr 102fr 101fr 101fr 103fr 110fr',
   },
+  AdventureTime: {
+    src:    'Public/Checks/Adventure time.webp',
+    top:    '7.758%',
+    left:   '26.376%',
+    width:  '47.339%',
+    height: '84.485%',
+    rows:   '1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr',
+  },
+  WW2: {
+    src:    'Public/Checks/WW2.webp',
+    top:    '7.120%',
+    left:   '25.568%',
+    width:  '49.013%',
+    height: '85.015%',
+    rows:   '1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr',
+  },
 };
 
 let currentMap = 'Ruines';
@@ -2074,6 +2134,11 @@ function handleAudioEvent(evt) {
     const a = document.getElementById('dota-ost-audio'); a.play();
     const btn = document.getElementById('dota-ost-btn');
     btn.textContent = '■ Dota'; btn.style.borderColor = '#f0c040'; btn.style.color = '#f0c040';
+  } else if (evt.type === 'island_song_play') {
+    stopAllMusic();
+    const a = document.getElementById('island-song-audio'); a.play();
+    const btn = document.getElementById('island-song-btn');
+    btn.textContent = '■ Island Song'; btn.style.borderColor = '#f0c040'; btn.style.color = '#f0c040';
   } else if (evt.type === 'music_stop') {
     stopAllMusic();
   } else if (evt.type === 'color_pick') {
@@ -2136,7 +2201,8 @@ const MUSIC_TRACKS = [
   { audioId: 'ost-audio',       btnId: 'ost-btn',       label: '♫ OST'       },
   { audioId: 'spiderman-audio', btnId: 'spiderman-btn', label: '♫ Spider-Man' },
   { audioId: 'spongebob-audio', btnId: 'spongebob-btn', label: '♫ SpongeBob'  },
-  { audioId: 'dota-ost-audio',  btnId: 'dota-ost-btn',  label: '♫ Dota'       },
+  { audioId: 'dota-ost-audio',    btnId: 'dota-ost-btn',    label: '♫ Dota'        },
+  { audioId: 'island-song-audio', btnId: 'island-song-btn', label: '♫ Island Song' },
 ];
 
 function stopAllMusic() {
@@ -2214,8 +2280,24 @@ function toggleDotaOST() {
   }
 }
 
+function toggleIslandSong() {
+  const audio = document.getElementById('island-song-audio');
+  const btn   = document.getElementById('island-song-btn');
+  if (audio.paused) {
+    stopAllMusic();
+    audio.play();
+    btn.textContent = '■ Island Song';
+    btn.style.borderColor = '#f0c040';
+    btn.style.color = '#f0c040';
+    pushAudioEvent('island_song_play');
+  } else {
+    stopAllMusic();
+    pushAudioEvent('music_stop');
+  }
+}
+
 // ─── PREMATCH SCREEN ──────────────────────────────────────────────────────────
-const PACK_LABELS = { invincible: 'INVINCIBLE', marvel: 'MARVEL', dota: 'DOTA 2', spongebob: 'SPONGEBOB' };
+const PACK_LABELS = { invincible: 'INVINCIBLE', marvel: 'MARVEL', dota: 'DOTA 2', spongebob: 'SPONGEBOB', adventuretime: 'ADV. TIME' };
 const PIECE_ORDER = ['K','Q','R','B','N','P'];
 const PIECE_NAMES = { K: 'KING', Q: 'QUEEN', R: 'ROOK', B: 'BISHOP', N: 'KNIGHT', P: 'PAWN' };
 let prematchOnStart = null;
