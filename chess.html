@@ -1211,7 +1211,16 @@ let gameId       = null;
 let myColor      = null;
 let dbChannel    = null;
 let isOnlineCreate = false;
-let gameSettings = null; // { map, packs, time }
+let gameSettings = null;
+let waitingPoll  = null;
+
+function startGameAsHost() {
+  if (myColor !== 'w') return;
+  if (waitingPoll) { clearInterval(waitingPoll); waitingPoll = null; }
+  document.getElementById('lobby-waiting').style.display = 'none';
+  document.getElementById('lobby').classList.add('hidden');
+  showOnlineIndicator('Противник подключился!');
+}
 
 function generateId() {
   return Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -1261,9 +1270,7 @@ function subscribeToGame() {
       }
       // Противник подключился
       if (state.opponentJoined && myColor === 'w') {
-        document.getElementById('lobby-waiting').style.display = 'none';
-        document.getElementById('lobby').classList.add('hidden');
-        showOnlineIndicator('Противник подключился!');
+        startGameAsHost();
       }
     })
     .subscribe();
