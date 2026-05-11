@@ -1027,6 +1027,7 @@ function applyMove(fr, fc, tr, tc) {
 }
 
 function undoMove() {
+  if (gameId) return; // в онлайн режиме отмена запрещена
   if (!history.length) return;
   const prev = history.pop();
   board = prev.board;
@@ -1218,8 +1219,9 @@ async function startGameAsHost() {
   if (myColor !== 'w') return;
   if (waitingPoll) { clearInterval(waitingPoll); waitingPoll = null; }
   document.getElementById('lobby-waiting').style.display = 'none';
-  document.getElementById('lobby').classList.add('hidden');
+  document.getElementById('lobby').style.display = 'none';
   showOnlineIndicator('Противник подключился!');
+  initTimers(); // таймер стартует только сейчас — оба игрока стартуют одновременно
 }
 
 function generateId() {
@@ -1265,9 +1267,9 @@ function subscribeToGame() {
       // Всегда обрабатываем аудио события
       if (state.audioEvent) handleAudioEvent(state.audioEvent);
       // Обновляем доску только если ход соперника
-      
+      if (state.turn === myColor) {
         deserializeState(state);
-      
+      }
       // Противник подключился
       if (state.opponentJoined && myColor === 'w') {
         startGameAsHost();
@@ -1294,12 +1296,19 @@ async function createOnlineGameWithSettings() {
   });
   if (error) { alert('Ошибка создания: ' + error.message); return; }
 
-  document.getElementById('lobby').classList.remove('hidden');
+  document.getElementById('lobby').style.display = '';
   document.getElementById('lobby-waiting').style.display = 'block';
   document.getElementById('room-code-display').textContent = gameId;
 
   subscribeToGame();
-  initTimers();
+  // Таймер стартует только когда противник подключится — в startGameAsHost()
+
+  // Поллинг — запасной вариант если подписка пропустит событие
+  waitingPoll = setInterval(async () => {
+    if (!gameId) { clearInterval(waitingPoll); waitingPoll = null; return; }
+    const { data } = await db.from('chess_games').select('state').eq('id', gameId).single();
+    if (data?.state?.opponentJoined) startGameAsHost();
+  }, 2000);
 }
 
 async function joinOnlineGame() {
@@ -1340,7 +1349,7 @@ async function joinOnlineGame() {
       updated_at: new Date().toISOString()
     }).eq('id', gameId);
 
-    document.getElementById('lobby').classList.add('hidden');
+    document.getElementById('lobby').style.display = 'none';
     showOnlineIndicator('Вы играете за чёрных');
     subscribeToGame();
     initTimers();
@@ -1565,6 +1574,8 @@ function backToLobbyMain() {
   document.getElementById('lobby-map').style.display    = 'none';
   document.getElementById('lobby-pieces').style.display = 'none';
   document.getElementById('lobby-main').style.display   = '';
+  isOnlineCreate = false;
+  if (waitingPoll) { clearInterval(waitingPoll); waitingPoll = null; }
 }
 
 function selectTime(seconds) {
@@ -1602,7 +1613,7 @@ function selectTime(seconds) {
     myColor = null;
     gameId  = null;
     loadSprites(() => {
-      document.getElementById('lobby').classList.add('hidden');
+      document.getElementById('lobby').style.display = 'none';
       applyMap(currentMap);
       resetGame();
       initTimers();
