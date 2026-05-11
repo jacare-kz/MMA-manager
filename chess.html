@@ -1333,9 +1333,12 @@ function applyMove(fr, fc, tr, tc) {
   if (wasWhiteInCheck) pendingAudioEvent = { type: 'escape', pack: selectedPacks.w };
   if (wasBlackInCheck) pendingAudioEvent = { type: 'escape', pack: selectedPacks.b };
   if (pendingAudioEvent) {
-    playEscapeAudio(pendingAudioEvent.pack);
-    pendingAudioEvent._id = Math.random().toString(36).substr(2, 9);
-    lastAudioEventId = pendingAudioEvent._id; // заглушить эхо
+    const evt = pendingAudioEvent;
+    pendingAudioEvent = null;
+    playEscapeAudio(evt.pack);
+    evt._id = Math.random().toString(36).substr(2, 9);
+    lastAudioEventId = evt._id;
+    if (gameId) pendingAudioEvent = evt; // для онлайн-синхронизации
   }
   pushState();
 }
