@@ -1214,7 +1214,7 @@ let isOnlineCreate = false;
 let gameSettings = null;
 let waitingPoll  = null;
 
-function startGameAsHost() {
+async function startGameAsHost() {
   if (myColor !== 'w') return;
   if (waitingPoll) { clearInterval(waitingPoll); waitingPoll = null; }
   document.getElementById('lobby-waiting').style.display = 'none';
