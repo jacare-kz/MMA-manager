@@ -838,7 +838,7 @@
           <div class="map-card-name">Bikini Bottom</div>
         </div>
         <div class="map-card" onclick="selectMap('Dota2')" id="map-Dota2">
-          <img src="Public/Checks/Dota 2.webp" alt="Dota 2">
+          <img src="Public/Checks/Dota2-map.webp" alt="Dota 2">
           <div class="map-card-name">Dota 2</div>
         </div>
       </div>
@@ -1136,6 +1136,7 @@ function cloneBoard(b) { return b.map(r => [...r]); }
 
 function resetGame() {
   stopTimer();
+  if (gamePoll) { clearInterval(gamePoll); gamePoll = null; }
   board = cloneBoard(INIT_BOARD);
   turn = 'w';
   selected = null;
@@ -1528,6 +1529,7 @@ let isOnlineCreate = false;
 let gameSettings = null;
 let waitingPoll  = null;
 let hostStarted  = false;
+let gamePoll     = null;
 
 function startGameAsHost() {
   if (myColor !== 'w') return;
@@ -1566,10 +1568,15 @@ function deserializeState(state) {
 
 async function pushState() {
   if (!gameId) return;
-  await db.from('chess_games').update({
-    state: serializeState(),
-    updated_at: new Date().toISOString()
-  }).eq('id', gameId);
+  const state = serializeState();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { error } = await db.from('chess_games').update({
+      state,
+      updated_at: new Date().toISOString()
+    }).eq('id', gameId);
+    if (!error) return;
+    await new Promise(r => setTimeout(r, 600));
+  }
 }
 
 function subscribeToGame() {
@@ -1588,6 +1595,20 @@ function subscribeToGame() {
       try { if (state.opponentJoined && myColor === 'w') startGameAsHost(); } catch(e) { console.error('startGameAsHost error:', e); }
     })
     .subscribe();
+
+  // Fallback: каждые 3с проверяем БД если ждём хода противника
+  if (gamePoll) clearInterval(gamePoll);
+  gamePoll = setInterval(async () => {
+    if (!gameId) { clearInterval(gamePoll); gamePoll = null; return; }
+    if (turn === myColor) return; // сейчас наш ход — ничего не делаем
+    try {
+      const { data } = await db.from('chess_games').select('state').eq('id', gameId).single();
+      if (data?.state?.turn === myColor) {
+        try { if (data.state.audioEvent) handleAudioEvent(data.state.audioEvent); } catch(e) {}
+        deserializeState(data.state);
+      }
+    } catch(e) {}
+  }, 3000);
 }
 
 function createOnlineGame() {
@@ -1812,7 +1833,7 @@ const MAP_CONFIG = {
     rows:   '118fr 100fr 101fr 100fr 101fr 100fr 102fr 103fr',
   },
   Dota2: {
-    src:    'Public/Checks/Dota 2.webp',
+    src:    'Public/Checks/Dota2-map.webp',
     top:    '4.782%',
     left:   '26.136%',
     width:  '47.368%',
