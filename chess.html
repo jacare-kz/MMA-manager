@@ -489,6 +489,70 @@
     cursor: pointer;
     letter-spacing: 1px;
   }
+
+  /* ══════════════════════════════════════════════════
+     МОБИЛЬНАЯ АДАПТИВКА — портретный экран
+     Доска поворачивается на 90° и заполняет экран
+  ══════════════════════════════════════════════════ */
+  @media (orientation: portrait) and (max-width: 900px) {
+
+    /* Поворачиваем доску на 90° чтобы заполнить портретный экран */
+    #game-wrapper {
+      width:      min(calc(100vw * 1672 / 941), 100vh);
+      height:     min(100vw, calc(100vh * 941 / 1672));
+      max-width:  none;
+      max-height: none;
+      transform:  translate(-50%, -50%) rotate(90deg);
+    }
+
+    /* Убираем задержку двойного тапа на ячейках */
+    .cell { touch-action: manipulation; }
+
+    /* UI overlay — компактнее */
+    #ui-overlay { top: 10px; left: 10px; gap: 5px; }
+    #ui-overlay h1 { font-size: 13px; letter-spacing: 2px; }
+    #turn-indicator { font-size: 10px; padding: 4px 8px; }
+    #status { font-size: 10px; padding: 3px 8px; }
+
+    /* Кнопки управления — мельче и переносятся */
+    #controls { flex-wrap: wrap; max-width: 48vw; gap: 4px; top: 10px; right: 10px; }
+    #controls button { padding: 6px 8px; font-size: 9px; letter-spacing: 0; }
+
+    /* Часы */
+    #clocks { right: 10px; bottom: 10px; gap: 5px; }
+    .clock { min-width: 80px; padding: 5px 10px; }
+    .clock-time { font-size: 22px; }
+    .clock-label { font-size: 8px; }
+
+    /* Лобби — под ширину экрана */
+    #lobby-box {
+      width: 92vw;
+      max-width: 420px;
+      padding: 22px 14px;
+      gap: 12px;
+    }
+    .map-grid { grid-template-columns: repeat(3, 1fr); max-height: 220px; }
+    .map-card img { height: 70px; }
+    .pack-row-label { width: 44px; font-size: 9px; }
+    .pack-btn { font-size: 10px; padding: 8px 4px; }
+    .time-btn { font-size: 12px; padding: 10px 4px; }
+    #room-code-display { font-size: 28px; letter-spacing: 5px; }
+
+    /* Калибровка */
+    #calibration { min-width: unset; width: 95vw; left: 50%; transform: translateX(-50%); bottom: 10px; }
+
+    /* Online индикатор */
+    #online-indicator { font-size: 10px; bottom: 10px; }
+  }
+
+  /* Ландшафт на мобильном — тоже чуть компактнее */
+  @media (orientation: landscape) and (max-height: 500px) {
+    #lobby-box { width: 90vw; max-width: 500px; padding: 16px 20px; gap: 10px; }
+    .map-grid { max-height: 150px; }
+    .map-card img { height: 55px; }
+    #ui-overlay h1 { font-size: 14px; }
+    #controls button { padding: 5px 10px; font-size: 10px; }
+  }
 </style>
 </head>
 <body>
