@@ -2022,23 +2022,20 @@ function handleAudioEvent(evt) {
     const otherSide  = pickedSide === 'w' ? 'b' : 'w';
 
     if (myPickedSide === pickedSide) {
-      // Гонка: оба кликнули одно и то же — я уступаю, беру другую сторону
+      // Гонка: оба кликнули одно — я уступаю, беру другую сторону
       myPickedSide = otherSide;
       colorPicked[otherSide] = true;
       markSideClaimed(otherSide, true);
     }
 
     colorPicked[pickedSide] = true;
-    markSideClaimed(pickedSide, myPickedSide === pickedSide ? true : false);
+    markSideClaimed(pickedSide, false); // у противника — занято
 
-    // Если я ещё не выбрал — меня автоматически ставят на оставшуюся сторону
-    if (!myPickedSide) {
-      myPickedSide = otherSide;
-      colorPicked[otherSide] = true;
-      markSideClaimed(otherSide, true);
-      // Заблокировать кнопку занятой стороны
-      const takenBtn = document.getElementById('pm-ready-' + pickedSide);
-      if (takenBtn) { takenBtn.disabled = true; takenBtn.style.opacity = '0.3'; }
+    // Заблокировать кнопку занятой стороны (второй должен нажать свою сам)
+    const takenBtn = document.getElementById('pm-ready-' + pickedSide);
+    if (takenBtn && !myPickedSide) {
+      takenBtn.disabled = true;
+      takenBtn.style.opacity = '0.3';
     }
 
     checkBothSidesPicked();
