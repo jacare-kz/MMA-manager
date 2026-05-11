@@ -823,23 +823,23 @@
       <p style="color:#aaa;font-size:13px;margin-bottom:8px;letter-spacing:1px">ВЫБОР КАРТЫ</p>
       <div class="map-grid">
         <div class="map-card selected" onclick="selectMap('Ruines')" id="map-Ruines">
-          <img src="Public/Checks/Ruines.png" alt="Ruines">
+          <img src="Public/Checks/Ruines.webp" alt="Ruines">
           <div class="map-card-name">Руины</div>
         </div>
         <div class="map-card" onclick="selectMap('Cosmos')" id="map-Cosmos">
-          <img src="Public/Checks/Cosmos.png" alt="Cosmos">
+          <img src="Public/Checks/Cosmos.webp" alt="Cosmos">
           <div class="map-card-name">Космос</div>
         </div>
         <div class="map-card" onclick="selectMap('Ice')" id="map-Ice">
-          <img src="Public/Checks/Ice.png" alt="Ice">
+          <img src="Public/Checks/Ice.webp" alt="Ice">
           <div class="map-card-name">Лёд</div>
         </div>
         <div class="map-card" onclick="selectMap('BikiniBottom')" id="map-BikiniBottom">
-          <img src="Public/Checks/Bikini Bottom.png" alt="Bikini Bottom">
+          <img src="Public/Checks/Bikini Bottom.webp" alt="Bikini Bottom">
           <div class="map-card-name">Bikini Bottom</div>
         </div>
         <div class="map-card" onclick="selectMap('Dota2')" id="map-Dota2">
-          <img src="Public/Checks/Dota 2.png" alt="Dota 2">
+          <img src="Public/Checks/Dota 2.webp" alt="Dota 2">
           <div class="map-card-name">Dota 2</div>
         </div>
       </div>
@@ -893,7 +893,7 @@
 <div id="online-indicator"><span class="dot"></span><span id="online-text">Онлайн</span></div>
 
 <div id="game-wrapper">
-  <img id="board-bg" src="Public/Checks/Ruines.png" alt="board" />
+  <img id="board-bg" src="Public/Checks/Ruines.webp" alt="board" />
   <div id="board"></div>
 </div>
 
@@ -975,15 +975,15 @@
 </div><!-- /game-ui-root -->
 
 <canvas id="sprite-canvas" style="display:none"></canvas>
-<audio id="omni-audio" src="Public/Checks/Voicy_Earth Isn't Yours To Conquer.mp3" preload="auto"></audio>
-<audio id="start-audio" src="Public/Checks/Voicy_Peeing Your Pants.mp3" preload="auto"></audio>
-<audio id="ost-audio" src="Public/Checks/13_Tom_Tom_Holy_Shit_Omni_Man_Invincible_Complete_OST_Sound.m4a" preload="auto" loop></audio>
-<audio id="thanos-audio" src="Public/Checks/Я_сама_неотвратимость_Танос_Марвел_для_ВП.m4a" preload="auto"></audio>
-<audio id="spiderman-audio" src="Public/Checks/Spider-Man-Main-Titles.m4a" preload="auto" loop></audio>
-<audio id="spongebob-audio" src="Public/Checks/SpongeBob-Closing-Theme-Song.m4a" preload="auto" loop></audio>
-<audio id="dota-ost-audio" src="Public/Checks/Dota-2-Main-Menu-Flute-Theme.m4a" preload="auto" loop></audio>
-<audio id="lina-audio" src="Public/Checks/Русская_озвучка_DOTA_2_Lina_Редкие_Фразы_Voiceli.m4a" preload="auto"></audio>
+<audio id="omni-audio"      src="Public/Checks/Voicy_Earth Isn't Yours To Conquer.mp3" preload="auto"></audio>
+<audio id="start-audio"    src="Public/Checks/Voicy_Peeing Your Pants.mp3" preload="auto"></audio>
+<audio id="thanos-audio"   src="Public/Checks/Я_сама_неотвратимость_Танос_Марвел_для_ВП.m4a" preload="auto"></audio>
 <audio id="plankton-audio" src="Public/Checks/Планктон_АААА_#shorts_#youtubeshorts_#приколы_#мем_#fu.m4a" preload="auto"></audio>
+<audio id="lina-audio"     src="Public/Checks/Русская_озвучка_DOTA_2_Lina_Редкие_Фразы_Voiceli.m4a" preload="metadata"></audio>
+<audio id="ost-audio"      src="Public/Checks/13_Tom_Tom_Holy_Shit_Omni_Man_Invincible_Complete_OST_Sound.m4a" preload="metadata" loop></audio>
+<audio id="spiderman-audio" src="Public/Checks/Spider-Man-Main-Titles.m4a" preload="metadata" loop></audio>
+<audio id="spongebob-audio" src="Public/Checks/SpongeBob-Closing-Theme-Song.m4a" preload="metadata" loop></audio>
+<audio id="dota-ost-audio"  src="Public/Checks/Dota-2-Main-Menu-Flute-Theme.m4a" preload="metadata" loop></audio>
 
 <script>
 // ─── PIECE SETS ───────────────────────────────────────────────────────────────
@@ -992,45 +992,45 @@ const PIECE_SETS_LIBRARY = {
   invincible: {
     type: 'files',
     pieces: {
-      K: 'Public/Checks/Invincible 6.jpg',
-      Q: 'Public/Checks/Invincible 2.jpg',
-      B: 'Public/Checks/Invincible 5.jpg',
-      N: 'Public/Checks/Invincible 4.jpg',
-      R: 'Public/Checks/invincible 1.jpg',
-      P: 'Public/Checks/Invincible 7.jpg',
+      K: 'Public/Checks/Invincible 6.webp',
+      Q: 'Public/Checks/Invincible 2.webp',
+      B: 'Public/Checks/Invincible 5.webp',
+      N: 'Public/Checks/Invincible 4.webp',
+      R: 'Public/Checks/invincible 1.webp',
+      P: 'Public/Checks/Invincible 7.webp',
     }
   },
   marvel: {
     type: 'files',
     pieces: {
-      K: 'Public/Checks/Marvel 8.jpg',
-      Q: 'Public/Checks/Marvel 7.jpg',
-      B: 'Public/Checks/Marvel 6.jpg',
-      N: 'Public/Checks/Marvel 3.jpg',
-      R: 'Public/Checks/Marvel 1.jpg',
-      P: 'Public/Checks/Marvel 4.jpg',
+      K: 'Public/Checks/Marvel 8.webp',
+      Q: 'Public/Checks/Marvel 7.webp',
+      B: 'Public/Checks/Marvel 6.webp',
+      N: 'Public/Checks/Marvel 3.webp',
+      R: 'Public/Checks/Marvel 1.webp',
+      P: 'Public/Checks/Marvel 4.webp',
     }
   },
   dota: {
     type: 'files',
     pieces: {
-      K: 'Public/Checks/Dota 1.jpg',
-      Q: 'Public/Checks/Dota 2.jpg',
-      R: 'Public/Checks/Dota 3.jpg',
-      B: 'Public/Checks/Dota 4.jpg',
-      N: 'Public/Checks/Dota 5.jpg',
-      P: 'Public/Checks/Dota 6.jpg',
+      K: 'Public/Checks/Dota 1.webp',
+      Q: 'Public/Checks/Dota 2.webp',
+      R: 'Public/Checks/Dota 3.webp',
+      B: 'Public/Checks/Dota 4.webp',
+      N: 'Public/Checks/Dota 5.webp',
+      P: 'Public/Checks/Dota 6.webp',
     }
   },
   spongebob: {
     type: 'files',
     pieces: {
-      K: 'Public/Checks/Spongebob 1.jpg',
-      Q: 'Public/Checks/Spongebob 2.jpg',
-      R: 'Public/Checks/Spongebob 3.jpg',
-      B: 'Public/Checks/Spongebob4.jpg',
-      N: 'Public/Checks/Spongebob 5.jpg',
-      P: 'Public/Checks/Spongebob 6.jpg',
+      K: 'Public/Checks/Spongebob 1.webp',
+      Q: 'Public/Checks/Spongebob 2.webp',
+      R: 'Public/Checks/Spongebob 3.webp',
+      B: 'Public/Checks/Spongebob4.webp',
+      N: 'Public/Checks/Spongebob 5.webp',
+      P: 'Public/Checks/Spongebob 6.webp',
     }
   },
 };
@@ -1780,7 +1780,7 @@ function copyCalSettings() {
 
 const MAP_CONFIG = {
   Ruines: {
-    src:    'Public/Checks/Ruines.png',
+    src:    'Public/Checks/Ruines.webp',
     top:    '2.976%',
     left:   '25.120%',
     width:  '49.761%',
@@ -1788,7 +1788,7 @@ const MAP_CONFIG = {
     rows:   '124fr 104fr 105fr 105fr 105fr 104fr 104fr 110fr',
   },
   Cosmos: {
-    src:    'Public/Checks/Cosmos.png',
+    src:    'Public/Checks/Cosmos.webp',
     top:    '2.976%',
     left:   '26.196%',
     width:  '47.368%',
@@ -1796,7 +1796,7 @@ const MAP_CONFIG = {
     rows:   '138fr 99fr 98fr 98fr 100fr 99fr 100fr 110fr',
   },
   Ice: {
-    src:    'Public/Checks/Ice.png',
+    src:    'Public/Checks/Ice.webp',
     top:    '5.207%',
     left:   '25.120%',
     width:  '49.761%',
@@ -1804,7 +1804,7 @@ const MAP_CONFIG = {
     rows:   '105fr 103fr 104fr 106fr 107fr 108fr 110fr 113fr',
   },
   BikiniBottom: {
-    src:    'Public/Checks/Bikini Bottom.png',
+    src:    'Public/Checks/Bikini Bottom.webp',
     top:    '4.676%',
     left:   '25.957%',
     width:  '47.847%',
@@ -1812,7 +1812,7 @@ const MAP_CONFIG = {
     rows:   '118fr 100fr 101fr 100fr 101fr 100fr 102fr 103fr',
   },
   Dota2: {
-    src:    'Public/Checks/Dota 2.png',
+    src:    'Public/Checks/Dota 2.webp',
     top:    '4.782%',
     left:   '26.136%',
     width:  '47.368%',
