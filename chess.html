@@ -526,6 +526,20 @@
     /* Убираем задержку тапа */
     .cell { touch-action: manipulation; }
 
+    /* Контролы — вертикальный стек в правом поле */
+    #controls {
+      flex-direction: column;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      gap: 5px;
+    }
+    #controls button, #controls a button {
+      font-size: 10px;
+      padding: 6px 10px;
+      letter-spacing: 0.5px;
+    }
+
     /* Лобби компактнее (внутри повёрнутого контейнера) */
     #lobby-box { width: 80%; max-width: 360px; padding: 20px 14px; gap: 10px; }
     .map-card img { height: 65px; }
