@@ -1265,9 +1265,9 @@ function subscribeToGame() {
       // Всегда обрабатываем аудио события
       if (state.audioEvent) handleAudioEvent(state.audioEvent);
       // Обновляем доску только если ход соперника
-      if (state.turn === myColor) {
+      
         deserializeState(state);
-      }
+      
       // Противник подключился
       if (state.opponentJoined && myColor === 'w') {
         startGameAsHost();
