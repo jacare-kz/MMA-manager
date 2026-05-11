@@ -545,155 +545,220 @@
     .map-card img { height: 50px; }
   }
 
-  /* ── PREMATCH SCREEN ─────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════
+     PREMATCH SCREEN  (Dota 2 style)
+  ══════════════════════════════════════════════════ */
   #prematch-screen {
     display: none;
     position: fixed;
     inset: 0;
     z-index: 9999;
-    background: #000;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
     overflow: hidden;
     font-family: 'Arial Black', Impact, sans-serif;
   }
 
-  /* фоновый градиент — два луча от краёв */
-  #prematch-screen::before {
+  /* Две половины — верх/низ */
+  .pm-half {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .pm-half.top {
+    background: linear-gradient(160deg, #0d1f10 0%, #162b18 40%, #0a140b 100%);
+  }
+  .pm-half.bottom {
+    background: linear-gradient(200deg, #1f0d0d 0%, #2b1616 40%, #140a0a 100%);
+  }
+
+  /* Диагональный световой луч на каждой половине */
+  .pm-half.top::after {
     content: '';
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(ellipse 55% 80% at 15% 50%, rgba(255,200,50,0.13) 0%, transparent 70%),
-      radial-gradient(ellipse 55% 80% at 85% 50%, rgba(50,120,255,0.13) 0%, transparent 70%);
+    background: linear-gradient(125deg, rgba(140,255,100,0.07) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .pm-half.bottom::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(55deg, rgba(255,120,60,0.07) 0%, transparent 55%);
     pointer-events: none;
   }
 
-  .pm-arena {
-    position: relative;
-    width: 100%;
-    max-width: 1200px;
+  /* Строка информации (название + кнопка готов) */
+  .pm-info-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 3%;
-    gap: 0;
-    flex: 1;
+    padding: 8px 24px 0;
+    position: relative;
+    z-index: 2;
   }
+  .pm-half.bottom .pm-info-bar { order: 2; padding: 0 24px 8px; }
 
-  .pm-team {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-    width: 42%;
-  }
-
-  .pm-team-name {
-    font-size: clamp(18px, 3vw, 36px);
+  .pm-team-label {
+    font-size: clamp(16px, 2.2vw, 28px);
     font-weight: 900;
-    letter-spacing: 4px;
+    letter-spacing: 5px;
     text-transform: uppercase;
-    text-shadow: 0 0 30px currentColor;
   }
-  .pm-team.white .pm-team-name { color: #f0c040; }
-  .pm-team.black .pm-team-name { color: #6699ff; }
+  .pm-half.top .pm-team-label    { color: #8fff70; text-shadow: 0 0 20px rgba(100,255,60,0.6); }
+  .pm-half.bottom .pm-team-label { color: #ff7040; text-shadow: 0 0 20px rgba(255,100,40,0.6); }
 
-  .pm-pieces {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    width: 100%;
+  /* Ряд героев */
+  .pm-heroes-row {
+    flex: 1;
+    display: flex;
+    position: relative;
+    z-index: 1;
   }
+  .pm-half.bottom .pm-heroes-row { order: 1; }
 
-  .pm-piece-card {
-    aspect-ratio: 1;
-    border-radius: 8px;
+  /* Карточка одного героя */
+  .pm-hero-card {
+    flex: 1;
+    position: relative;
     overflow: hidden;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    transition: transform 0.2s, box-shadow 0.2s;
   }
-  .pm-piece-card:hover { transform: scale(1.05); box-shadow: 0 0 16px rgba(255,200,50,0.4); }
 
-  .pm-piece-card img {
-    width: 100%;
+  /* Разделитель между героями — диагональная линия */
+  .pm-hero-card + .pm-hero-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: -10%; bottom: -10%;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.18) 40%, rgba(255,255,255,0.18) 60%, transparent 100%);
+    transform: skewX(-8deg);
+    z-index: 3;
+  }
+
+  .pm-hero-card img {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
     height: 100%;
+    width: 100%;
     object-fit: contain;
+    object-position: bottom center;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.8));
   }
 
-  .pm-piece-label {
-    font-size: clamp(8px, 1vw, 12px);
-    color: #888;
-    text-align: center;
-    letter-spacing: 1px;
-    margin-top: 2px;
-    text-transform: uppercase;
-  }
-
-  .pm-vs {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
+  /* Тёмный градиент снизу карточки — под именем */
+  .pm-hero-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 35%, transparent 60%);
+    pointer-events: none;
     z-index: 1;
   }
 
-  .pm-vs-text {
-    font-size: clamp(36px, 6vw, 80px);
+  /* Имя героя — вертикальное снизу */
+  .pm-hero-name {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-90deg);
+    transform-origin: center center;
+    white-space: nowrap;
+    font-size: clamp(9px, 1vw, 13px);
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.85);
+    text-transform: uppercase;
+    text-shadow: 0 1px 6px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,0.8);
+    z-index: 2;
+  }
+
+  /* Кнопка ГОТОВ */
+  .pm-ready-btn {
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.5);
+    font-family: 'Arial Black', Impact, sans-serif;
+    font-size: clamp(11px, 1.3vw, 15px);
     font-weight: 900;
     letter-spacing: 4px;
-    color: #fff;
-    text-shadow: 0 0 40px rgba(255,255,255,0.6), 0 0 80px rgba(255,255,255,0.2);
-  }
-
-  .pm-divider {
-    width: 2px;
-    height: clamp(60px, 10vw, 120px);
-    background: linear-gradient(to bottom, transparent, #fff, transparent);
-    opacity: 0.3;
-  }
-
-  .pm-bottom {
-    padding: 20px 0 30px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .pm-start-btn {
-    background: transparent;
-    border: 2px solid #f0c040;
-    color: #f0c040;
-    font-family: 'Arial Black', Impact, sans-serif;
-    font-size: clamp(14px, 2vw, 22px);
-    font-weight: 900;
-    letter-spacing: 5px;
-    padding: 14px 48px;
+    padding: 7px 22px;
     cursor: pointer;
     text-transform: uppercase;
-    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
-    text-shadow: 0 0 12px #f0c040;
-    box-shadow: 0 0 20px rgba(240,192,64,0.2), inset 0 0 20px rgba(240,192,64,0.05);
+    transition: all 0.2s;
   }
-  .pm-start-btn:hover {
-    background: rgba(240,192,64,0.12);
-    box-shadow: 0 0 40px rgba(240,192,64,0.5), inset 0 0 20px rgba(240,192,64,0.1);
-    transform: scale(1.04);
+  .pm-half.top    .pm-ready-btn:hover:not(:disabled) { border-color: #8fff70; color: #8fff70; box-shadow: 0 0 18px rgba(100,255,60,0.4); }
+  .pm-half.bottom .pm-ready-btn:hover:not(:disabled) { border-color: #ff7040; color: #ff7040; box-shadow: 0 0 18px rgba(255,100,40,0.4); }
+  .pm-ready-btn.ready {
+    border-color: #4caf50;
+    color: #4caf50;
+    box-shadow: 0 0 22px rgba(76,175,80,0.6);
+    cursor: default;
   }
-  .pm-start-btn:active { transform: scale(0.98); }
+  .pm-ready-btn:disabled { cursor: default; }
 
-  .pm-hint {
-    color: #555;
-    font-size: 12px;
+  /* VS полоса по центру */
+  .pm-vs-bar {
+    position: relative;
+    height: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pm-vs-badge {
+    width: clamp(52px, 6vw, 76px);
+    height: clamp(52px, 6vw, 76px);
+    border-radius: 50%;
+    background: radial-gradient(circle, #c8a020 0%, #7a5a00 60%, #3a2800 100%);
+    border: 3px solid #f0c040;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(16px, 2.2vw, 26px);
+    font-weight: 900;
+    color: #fff;
     letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(255,200,50,0.8);
+    box-shadow: 0 0 30px rgba(240,192,64,0.7), 0 0 60px rgba(240,192,64,0.3);
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Горизонтальная светящаяся линия раздела */
+  .pm-vs-bar::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right, transparent 0%, #f0c040 30%, #fff 50%, #f0c040 70%, transparent 100%);
+    opacity: 0.6;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Подсказка снизу */
+  .pm-hint-bar {
+    position: absolute;
+    bottom: 10px;
+    left: 0; right: 0;
+    text-align: center;
+    z-index: 20;
+  }
+  .pm-hint {
+    color: rgba(255,255,255,0.35);
+    font-size: 11px;
+    letter-spacing: 3px;
     font-family: Arial, sans-serif;
+    text-transform: uppercase;
   }
 </style>
 </head>
@@ -701,29 +766,34 @@
 
 <div id="game-ui-root">
 
-<!-- Предматчевый экран -->
+<!-- Предматчевый экран (Dota 2 style) -->
 <div id="prematch-screen">
-  <div class="pm-arena">
-    <div class="pm-team white">
-      <div class="pm-team-name" id="pm-name-w">WHITE</div>
-      <div class="pm-pieces" id="pm-pieces-w"></div>
-    </div>
 
-    <div class="pm-vs">
-      <div class="pm-divider"></div>
-      <div class="pm-vs-text">VS</div>
-      <div class="pm-divider"></div>
+  <!-- Верхняя половина — белые -->
+  <div class="pm-half top">
+    <div class="pm-info-bar">
+      <div class="pm-team-label" id="pm-name-w">INVINCIBLE</div>
+      <button class="pm-ready-btn" id="pm-ready-w" onclick="onReadyClick('w')">ГОТОВ</button>
     </div>
+    <div class="pm-heroes-row" id="pm-heroes-w"></div>
+  </div>
 
-    <div class="pm-team black">
-      <div class="pm-team-name" id="pm-name-b">BLACK</div>
-      <div class="pm-pieces" id="pm-pieces-b"></div>
+  <!-- VS по центру -->
+  <div class="pm-vs-bar">
+    <div class="pm-vs-badge">VS</div>
+  </div>
+
+  <!-- Нижняя половина — чёрные -->
+  <div class="pm-half bottom">
+    <div class="pm-heroes-row" id="pm-heroes-b"></div>
+    <div class="pm-info-bar">
+      <div class="pm-team-label" id="pm-name-b">MARVEL</div>
+      <button class="pm-ready-btn" id="pm-ready-b" onclick="onReadyClick('b')">ГОТОВ</button>
     </div>
   </div>
 
-  <div class="pm-bottom">
-    <button class="pm-start-btn" onclick="onStartMatchClick()">▶ НАЧАТЬ МАТЧ</button>
-    <div class="pm-hint" id="pm-hint">НАЖМИТЕ ДЛЯ НАЧАЛА</div>
+  <div class="pm-hint-bar">
+    <div class="pm-hint" id="pm-hint">ОБА ИГРОКА ДОЛЖНЫ НАЖАТЬ ГОТОВ</div>
   </div>
 </div>
 
@@ -1452,15 +1522,18 @@ let dbChannel    = null;
 let isOnlineCreate = false;
 let gameSettings = null;
 let waitingPoll  = null;
+let hostStarted  = false;
 
 function startGameAsHost() {
   if (myColor !== 'w') return;
+  if (hostStarted) return;
+  hostStarted = true;
   if (waitingPoll) { clearInterval(waitingPoll); waitingPoll = null; }
   const lobby = document.getElementById('lobby');
   lobby.setAttribute('style', 'display:none');
   document.getElementById('lobby-waiting').style.display = 'none';
   showOnlineIndicator('Противник подключился!');
-  showPrematch(() => { initTimers(); });
+  try { showPrematch(() => { initTimers(); }); } catch(e) { console.error('showPrematch error:', e); initTimers(); }
 }
 
 function generateId() {
@@ -1507,7 +1580,7 @@ function subscribeToGame() {
       try {
         if (state.turn === myColor) deserializeState(state);
       } catch(e) {}
-      if (state.opponentJoined && myColor === 'w') startGameAsHost();
+      try { if (state.opponentJoined && myColor === 'w') startGameAsHost(); } catch(e) { console.error('startGameAsHost error:', e); }
     })
     .subscribe();
 }
@@ -1521,6 +1594,7 @@ function createOnlineGame() {
 async function createOnlineGameWithSettings() {
   gameId  = generateId();
   myColor = 'w';
+  hostStarted = false;
   gameSettings = { map: currentMap, packs: { ...selectedPacks }, time: selectedTimeOption };
   resetGame();
 
@@ -1938,8 +2012,8 @@ function handleAudioEvent(evt) {
     btn.textContent = '■ Dota'; btn.style.borderColor = '#f0c040'; btn.style.color = '#f0c040';
   } else if (evt.type === 'music_stop') {
     stopAllMusic();
-  } else if (evt.type === 'match_start') {
-    dismissPrematch();
+  } else if (evt.type === 'player_ready') {
+    markReady(evt.color);
   } else if (evt.type === 'start') {
     const a = document.getElementById('start-audio'); a.currentTime = 0; a.play();
   }
@@ -2059,36 +2133,51 @@ function toggleDotaOST() {
 // ─── PREMATCH SCREEN ──────────────────────────────────────────────────────────
 const PACK_LABELS = { invincible: 'INVINCIBLE', marvel: 'MARVEL', dota: 'DOTA 2', spongebob: 'SPONGEBOB' };
 const PIECE_ORDER = ['K','Q','R','B','N','P'];
+const PIECE_NAMES = { K: 'KING', Q: 'QUEEN', R: 'ROOK', B: 'BISHOP', N: 'KNIGHT', P: 'PAWN' };
 let prematchOnStart = null;
+let readyPlayers = new Set();
 
 function showPrematch(onStart) {
   prematchOnStart = onStart;
+  readyPlayers = new Set();
+
+  // Reset buttons
+  ['w','b'].forEach(color => {
+    const btn = document.getElementById('pm-ready-' + color);
+    btn.textContent = 'ГОТОВ';
+    btn.classList.remove('ready');
+    btn.disabled = false;
+  });
 
   // Team names
   document.getElementById('pm-name-w').textContent = PACK_LABELS[selectedPacks.w] || 'БЕЛЫЕ';
   document.getElementById('pm-name-b').textContent = PACK_LABELS[selectedPacks.b] || 'ЧЁРНЫЕ';
 
-  // Piece images
+  // Hero cards
   ['w', 'b'].forEach(color => {
-    const container = document.getElementById('pm-pieces-' + color);
+    const container = document.getElementById('pm-heroes-' + color);
     container.innerHTML = '';
     PIECE_ORDER.forEach(t => {
       const src = pieceImages[color + t];
       const card = document.createElement('div');
-      card.className = 'pm-piece-card';
+      card.className = 'pm-hero-card';
       if (src) {
         const img = document.createElement('img');
         img.src = src;
         card.appendChild(img);
       }
+      const nameEl = document.createElement('div');
+      nameEl.className = 'pm-hero-name';
+      nameEl.textContent = PIECE_NAMES[t];
+      card.appendChild(nameEl);
       container.appendChild(card);
     });
   });
 
-  // Online hint
+  // Hint
   document.getElementById('pm-hint').textContent = gameId
-    ? 'ЛЮБОЙ ИГРОК МОЖЕТ НАЧАТЬ'
-    : 'НАЖМИТЕ ДЛЯ НАЧАЛА';
+    ? 'ОБА ИГРОКА ДОЛЖНЫ НАЖАТЬ ГОТОВ'
+    : 'НАЖМИТЕ ГОТОВ ЧТОБЫ НАЧАТЬ';
 
   // Play OST
   stopAllMusic();
@@ -2112,9 +2201,32 @@ function dismissPrematch() {
   }
 }
 
-function onStartMatchClick() {
-  if (gameId) pushAudioEvent('match_start');
-  dismissPrematch();
+function markReady(color) {
+  readyPlayers.add(color);
+  const btn = document.getElementById('pm-ready-' + color);
+  if (btn) {
+    btn.textContent = '✓ ГОТОВ';
+    btn.classList.add('ready');
+    btn.disabled = true;
+  }
+  // Both ready → start after short visual pause
+  if (readyPlayers.has('w') && readyPlayers.has('b')) {
+    document.getElementById('pm-hint').textContent = 'НАЧИНАЕМ...';
+    setTimeout(dismissPrematch, 700);
+  }
+}
+
+function onReadyClick(color) {
+  // Local play: any click starts both sides
+  if (!gameId) {
+    markReady('w');
+    markReady('b');
+    return;
+  }
+  // Online: only your own side
+  if (myColor && myColor !== color) return;
+  markReady(color);
+  pushAudioEvent('player_ready', { color });
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
