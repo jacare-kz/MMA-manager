@@ -1207,9 +1207,11 @@ const SUPABASE_URL = 'https://xpnyctvulqsqsluaajvh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhwbnljdHZ1bHFzcXNsdWFhanZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0Mjk1NDMsImV4cCI6MjA5NDAwNTU0M30.98P3AUZSSbmuDDhQhtp4LyBtynVPrDmP11l9r1mfDBw';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let gameId   = null;
-let myColor  = null;
-let dbChannel = null;
+let gameId       = null;
+let myColor      = null;
+let dbChannel    = null;
+let isOnlineCreate = false;
+let gameSettings = null; // { map, packs, time }
 
 function generateId() {
   return Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -1220,6 +1222,7 @@ let pendingAudioEvent = null;
 function serializeState() {
   const state = { board, turn, enPassant, castlingRights };
   if (pendingAudioEvent) { state.audioEvent = { ...pendingAudioEvent, id: pendingAudioEvent._id }; pendingAudioEvent = null; }
+  if (gameSettings) state.gameSettings = gameSettings;
   return state;
 }
 
@@ -1266,9 +1269,16 @@ function subscribeToGame() {
     .subscribe();
 }
 
-async function createOnlineGame() {
+function createOnlineGame() {
+  isOnlineCreate = true;
+  document.getElementById('lobby-main').style.display = 'none';
+  document.getElementById('lobby-map').style.display  = 'block';
+}
+
+async function createOnlineGameWithSettings() {
   gameId  = generateId();
   myColor = 'w';
+  gameSettings = { map: currentMap, packs: { ...selectedPacks }, time: selectedTimeOption };
   resetGame();
 
   const { error } = await db.from('chess_games').insert({
@@ -1277,11 +1287,12 @@ async function createOnlineGame() {
   });
   if (error) { alert('Ошибка создания: ' + error.message); return; }
 
-  document.getElementById('lobby-main').style.display    = 'none';
+  document.getElementById('lobby').classList.remove('hidden');
   document.getElementById('lobby-waiting').style.display = 'block';
   document.getElementById('room-code-display').textContent = gameId;
 
   subscribeToGame();
+  initTimers();
 }
 
 async function joinOnlineGame() {
@@ -1293,17 +1304,40 @@ async function joinOnlineGame() {
 
   gameId  = code;
   myColor = 'b';
-  deserializeState(data.state);
 
-  // Уведомляем белых что чёрный подключился
-  await db.from('chess_games').update({
-    state: { ...data.state, opponentJoined: true },
-    updated_at: new Date().toISOString()
-  }).eq('id', gameId);
+  // Применяем настройки хоста
+  const s = data.state.gameSettings;
+  if (s) {
+    currentMap      = s.map;
+    selectedPacks   = { ...s.packs };
+    selectedTimeOption = s.time;
+    gameSettings    = s;
+    PIECE_SETS = {
+      w: PIECE_SETS_LIBRARY[s.packs.w],
+      b: PIECE_SETS_LIBRARY[s.packs.b],
+    };
+    const packLabels = { invincible: 'Invincible', marvel: 'Marvel', dota: 'Dota 2', spongebob: 'SpongeBob' };
+    document.getElementById('clock-w').querySelector('.clock-label').textContent =
+      packLabels[s.packs.w] + ' · Белые';
+    document.getElementById('clock-b').querySelector('.clock-label').textContent =
+      packLabels[s.packs.b] + ' · Чёрные';
+    applyMap(s.map);
+  }
 
-  document.getElementById('lobby').classList.add('hidden');
-  showOnlineIndicator('Вы играете за чёрных');
-  subscribeToGame();
+  loadSprites(() => {
+    deserializeState(data.state);
+
+    // Уведомляем белых что чёрный подключился
+    db.from('chess_games').update({
+      state: { ...data.state, opponentJoined: true },
+      updated_at: new Date().toISOString()
+    }).eq('id', gameId);
+
+    document.getElementById('lobby').classList.add('hidden');
+    showOnlineIndicator('Вы играете за чёрных');
+    subscribeToGame();
+    initTimers();
+  });
 }
 
 function playLocal() {
@@ -1528,17 +1562,13 @@ function backToLobbyMain() {
 
 function selectTime(seconds) {
   selectedTimeOption = seconds;
-  myColor = null;
-  gameId = null;
   document.getElementById('lobby-time').style.display = 'none';
 
-  // Rebuild piece sets from selection and reload sprites
   PIECE_SETS = {
     w: PIECE_SETS_LIBRARY[selectedPacks.w],
     b: PIECE_SETS_LIBRARY[selectedPacks.b],
   };
 
-  // Update turn indicator labels
   const packLabels = { invincible: 'Invincible', marvel: 'Marvel', dota: 'Dota 2', spongebob: 'SpongeBob' };
   document.getElementById('turn-text').textContent =
     'Ход белых (' + packLabels[selectedPacks.w] + ')';
@@ -1547,21 +1577,36 @@ function selectTime(seconds) {
   document.getElementById('clock-b').querySelector('.clock-label').textContent =
     packLabels[selectedPacks.b] + ' · Чёрные';
 
-  // Play start sound only if Invincible pack is selected for white
   const playStartSound = selectedPacks.w === 'invincible';
 
-  loadSprites(() => {
-    document.getElementById('lobby').classList.add('hidden');
-    applyMap(currentMap);
-    resetGame();
-    initTimers();
-    if (playStartSound) {
-      const startAudio = document.getElementById('start-audio');
-      startAudio.currentTime = 0;
-      startAudio.play();
-      pushAudioEvent('start');
-    }
-  });
+  if (isOnlineCreate) {
+    isOnlineCreate = false;
+    loadSprites(() => {
+      applyMap(currentMap);
+      createOnlineGameWithSettings();
+      if (playStartSound) {
+        const startAudio = document.getElementById('start-audio');
+        startAudio.currentTime = 0;
+        startAudio.play();
+        pushAudioEvent('start');
+      }
+    });
+  } else {
+    myColor = null;
+    gameId  = null;
+    loadSprites(() => {
+      document.getElementById('lobby').classList.add('hidden');
+      applyMap(currentMap);
+      resetGame();
+      initTimers();
+      if (playStartSound) {
+        const startAudio = document.getElementById('start-audio');
+        startAudio.currentTime = 0;
+        startAudio.play();
+        pushAudioEvent('start');
+      }
+    });
+  }
 }
 
 function initTimers() {
