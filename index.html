@@ -11,6 +11,26 @@
 </head>
 <body>
 
+<!-- Game selector overlay -->
+<div id="game-selector" class="game-selector-overlay">
+  <div class="game-selector-box">
+    <div class="game-selector-title">ВЫБЕРИ ИГРУ</div>
+    <div class="game-selector-subtitle">SELECT YOUR GAME</div>
+    <div class="game-selector-cards">
+      <button class="game-card" id="pick-mma">
+        <div class="game-card-icon">🥊</div>
+        <div class="game-card-name">MMA MANAGER</div>
+        <div class="game-card-desc">APEX Fighting Championship</div>
+      </button>
+      <button class="game-card" id="pick-chess">
+        <div class="game-card-icon">♟</div>
+        <div class="game-card-name">ШАХМАТЫ</div>
+        <div class="game-card-desc">Chess Engine</div>
+      </button>
+    </div>
+  </div>
+</div>
+
 <header class="topbar">
   <div class="brand">
     <span class="brand-mark">APEX</span><span class="brand-mark accent">FC</span>
@@ -24,7 +44,6 @@
     <button class="nav-btn" data-screen="matchmaker">MATCHMAKER</button>
     <button class="nav-btn" data-screen="events">EVENTS</button>
     <button class="nav-btn" data-screen="testlab">TEST LAB</button>
-    <a href="chess.html" class="nav-btn nav-btn-chess">♟ CHESS</a>
   </nav>
 </header>
 

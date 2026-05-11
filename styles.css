@@ -39,6 +39,78 @@ body {
 button { font-family: inherit; cursor: pointer; }
 button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
+/* ============ Game Selector Overlay ============ */
+.game-selector-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in 0.3s ease;
+}
+.game-selector-overlay.hidden {
+  display: none;
+}
+.game-selector-box {
+  text-align: center;
+  padding: 48px 32px;
+}
+.game-selector-title {
+  font-family: var(--display);
+  font-size: 52px;
+  letter-spacing: 4px;
+  color: var(--ink);
+  line-height: 1;
+}
+.game-selector-subtitle {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-mute);
+  letter-spacing: 4px;
+  margin-top: 6px;
+  margin-bottom: 48px;
+}
+.game-selector-cards {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+}
+.game-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 40px 48px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.game-card:hover {
+  border-color: var(--gold);
+  background: var(--bg-elev2);
+  transform: translateY(-4px);
+}
+.game-card-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+.game-card-name {
+  font-family: var(--display);
+  font-size: 28px;
+  letter-spacing: 2px;
+}
+.game-card-desc {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-mute);
+  letter-spacing: 2px;
+}
+
 /* ============ Top bar ============ */
 .topbar {
   display: flex;

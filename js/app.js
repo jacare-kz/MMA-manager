@@ -33,6 +33,17 @@ function renderHome(root) {
 }
 
 
+// Game selector
+function initGameSelector() {
+  const overlay = $('#game-selector');
+  $('#pick-mma').addEventListener('click', () => {
+    overlay.classList.add('hidden');
+  });
+  $('#pick-chess').addEventListener('click', () => {
+    window.location.href = 'chess.html';
+  });
+}
+
 // Wire up nav
 document.addEventListener('DOMContentLoaded', () => {
   $$('.nav-btn').forEach(b => {
@@ -40,4 +51,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('#rosterCount').textContent = `${FIGHTERS.length} FIGHTERS LOADED`;
   navigateTo('home');
+  initGameSelector();
 });
