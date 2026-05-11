@@ -1215,13 +1215,14 @@ let isOnlineCreate = false;
 let gameSettings = null;
 let waitingPoll  = null;
 
-async function startGameAsHost() {
+function startGameAsHost() {
   if (myColor !== 'w') return;
   if (waitingPoll) { clearInterval(waitingPoll); waitingPoll = null; }
+  const lobby = document.getElementById('lobby');
+  lobby.setAttribute('style', 'display:none');
   document.getElementById('lobby-waiting').style.display = 'none';
-  document.getElementById('lobby').style.display = 'none';
   showOnlineIndicator('Противник подключился!');
-  initTimers(); // таймер стартует только сейчас — оба игрока стартуют одновременно
+  initTimers();
 }
 
 function generateId() {
@@ -1264,16 +1265,11 @@ function subscribeToGame() {
       filter: `id=eq.${gameId}`
     }, (payload) => {
       const state = payload.new.state;
-      // Всегда обрабатываем аудио события
-      if (state.audioEvent) handleAudioEvent(state.audioEvent);
-      // Обновляем доску только если ход соперника
-      if (state.turn === myColor) {
-        deserializeState(state);
-      }
-      // Противник подключился
-      if (state.opponentJoined && myColor === 'w') {
-        startGameAsHost();
-      }
+      try { if (state.audioEvent) handleAudioEvent(state.audioEvent); } catch(e) {}
+      try {
+        if (state.turn === myColor) deserializeState(state);
+      } catch(e) {}
+      if (state.opponentJoined && myColor === 'w') startGameAsHost();
     })
     .subscribe();
 }
@@ -1340,11 +1336,11 @@ async function joinOnlineGame() {
     applyMap(s.map);
   }
 
-  loadSprites(() => {
+  loadSprites(async () => {
     deserializeState(data.state);
 
-    // Уведомляем белых что чёрный подключился
-    db.from('chess_games').update({
+    // Уведомляем белых что чёрный подключился (await — ждём подтверждения)
+    await db.from('chess_games').update({
       state: { ...data.state, opponentJoined: true },
       updated_at: new Date().toISOString()
     }).eq('id', gameId);
